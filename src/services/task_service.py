@@ -4,10 +4,10 @@
 异步任务服务层
 ===================================
 
-职责：
+Responsibilities:
 1. 管理异步分析任务（线程池）
 2. 执行股票分析并推送结果
-3. 查询任务状态和历史
+3. QueryTask status和历史
 
 迁移自 web/services.py 的 AnalysisService 类
 """
@@ -77,7 +77,7 @@ class TaskService:
         提交异步分析任务
 
         Args:
-            code: 股票代码
+            code: Stock code
             report_type: 报告类型枚举
             source_message: 来源消息（用于回复）
             save_context_snapshot: 是否保存上下文快照
@@ -114,7 +114,7 @@ class TaskService:
         }
 
     def get_task_status(self, task_id: str) -> Optional[Dict[str, Any]]:
-        """获取任务状态"""
+        """获取Task status"""
         with self._tasks_lock:
             return self._tasks.get(task_id)
 
@@ -122,7 +122,7 @@ class TaskService:
         """列出最近的任务"""
         with self._tasks_lock:
             tasks = list(self._tasks.values())
-        # 按开始时间倒序
+        # 按Started时间倒序
         tasks.sort(key=lambda x: x.get('start_time', ''), reverse=True)
         return tasks[:limit]
 
@@ -152,7 +152,7 @@ class TaskService:
 
         内部方法，在线程池中运行
         """
-        # 初始化任务状态
+        # 初始化Task status
         with self._tasks_lock:
             self._tasks[task_id] = {
                 "task_id": task_id,
@@ -169,7 +169,7 @@ class TaskService:
             from src.config import get_config
             from main import StockAnalysisPipeline
 
-            logger.info(f"[TaskService] 开始分析股票: {code}")
+            logger.info(f"[TaskService] StartedAnalysis of stock: {code}")
 
             # 创建分析管道
             config = get_config()
@@ -207,7 +207,7 @@ class TaskService:
                         "result": result_data
                     })
 
-                logger.info(f"[TaskService] 股票 {code} 分析完成: {result.operation_advice}")
+                logger.info(f"[TaskService] 股票 {code} 分析Completed: {result.operation_advice}")
                 return {"success": True, "task_id": task_id, "result": result_data}
             else:
                 fail_message = "分析返回空结果"
@@ -220,7 +220,7 @@ class TaskService:
                         "error": fail_message
                     })
 
-                logger.warning(f"[TaskService] 股票 {code} 分析失败: {fail_message}")
+                logger.warning(f"[TaskService] 股票 {code} Analysis failed: {fail_message}")
                 return {"success": False, "task_id": task_id, "error": fail_message}
 
         except Exception as e:

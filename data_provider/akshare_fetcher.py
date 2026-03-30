@@ -16,7 +16,7 @@ AkshareFetcher - 主数据源 (Priority 1)
 1. 每次请求前随机休眠 2-5 秒
 2. 随机轮换 User-Agent
 3. 使用 tenacity 实现指数退避重试
-4. 熔断器机制：连续失败后自动冷却
+4. 熔断器机制：连续Failed后自动冷却
 
 增强数据：
 - 实时行情：量比、换手率、市盈率、市净率、总市值、流通市值
@@ -103,7 +103,7 @@ def _is_etf_code(stock_code: str) -> bool:
         stock_code: 股票/基金代码
         
     Returns:
-        True 表示是 ETF 代码，False 表示是普通股票代码
+        True 表示是 ETF 代码，False 表示是普通Stock code
     """
     etf_prefixes = ('51', '52', '56', '58', '15', '16', '18')
     code = stock_code.strip().split('.')[0]
@@ -119,7 +119,7 @@ def _is_hk_code(stock_code: str) -> bool:
     - 部分港股代码可能带有前缀，如 'hk00700', 'hk1810'
 
     Args:
-        stock_code: 股票代码
+        stock_code: Stock code
 
     Returns:
         True 表示是港股代码，False 表示不是港股代码
@@ -159,7 +159,7 @@ def _is_us_code(stock_code: str) -> bool:
     委托给 us_index_mapping 模块的 is_us_stock_code()。
 
     Args:
-        stock_code: 股票代码
+        stock_code: Stock code
 
     Returns:
         True 表示是美股代码，False 表示不是美股代码
@@ -245,7 +245,7 @@ def _build_realtime_failure_message(
     error_type: str,
 ) -> str:
     return (
-        f"{source_name} 实时行情接口失败: endpoint={endpoint}, stock_code={stock_code}, "
+        f"{source_name} 实时行情接口Failed: endpoint={endpoint}, stock_code={stock_code}, "
         f"symbol={symbol}, category={category}, error_type={error_type}, "
         f"elapsed={elapsed:.2f}s, detail={detail}"
     )
@@ -261,7 +261,7 @@ class AkshareFetcher(BaseFetcher):
     关键策略：
     - 每次请求前随机休眠 2.0-5.0 秒
     - 随机 User-Agent 轮换
-    - 失败后指数退避重试（最多3次）
+    - Failed后指数退避重试（最多3次）
     """
     
     name = "AkshareFetcher"
@@ -296,7 +296,7 @@ class AkshareFetcher(BaseFetcher):
             random_ua = random.choice(USER_AGENTS)
             logger.debug(f"设置 User-Agent: {random_ua[:50]}...")
         except Exception as e:
-            logger.debug(f"设置 User-Agent 失败: {e}")
+            logger.debug(f"设置 User-Agent Failed: {e}")
     
     def _enforce_rate_limit(self) -> None:
         """
@@ -362,7 +362,7 @@ class AkshareFetcher(BaseFetcher):
 
         策略：
         1. 优先尝试东方财富接口 (ak.stock_zh_a_hist)
-        2. 失败后尝试新浪财经接口 (ak.stock_zh_a_daily)
+        2. Failed后尝试新浪财经接口 (ak.stock_zh_a_daily)
         3. 最后尝试腾讯财经接口 (ak.stock_zh_a_hist_tx)
         """
         # 尝试列表
@@ -380,15 +380,15 @@ class AkshareFetcher(BaseFetcher):
                 df = fetch_method(stock_code, start_date, end_date)
 
                 if df is not None and not df.empty:
-                    logger.info(f"[数据源] {source_name} 获取成功")
+                    logger.info(f"[数据源] {source_name} 获取Succeeded")
                     return df
             except Exception as e:
                 last_error = e
-                logger.warning(f"[数据源] {source_name} 获取失败: {e}")
+                logger.warning(f"[数据源] {source_name} 获取Failed: {e}")
                 # 继续尝试下一个
 
-        # 所有都失败
-        raise DataFetchError(f"Akshare 所有渠道获取失败: {last_error}")
+        # 所有都Failed
+        raise DataFetchError(f"Akshare 所有渠道获取Failed: {last_error}")
 
     def _fetch_stock_data_em(self, stock_code: str, start_date: str, end_date: str) -> pd.DataFrame:
         """
@@ -420,7 +420,7 @@ class AkshareFetcher(BaseFetcher):
             api_elapsed = _time.time() - api_start
 
             if df is not None and not df.empty:
-                logger.info(f"[API返回] ak.stock_zh_a_hist 成功: {len(df)} 行, 耗时 {api_elapsed:.2f}s")
+                logger.info(f"[API返回] ak.stock_zh_a_hist Succeeded: {len(df)} 行, 耗时 {api_elapsed:.2f}s")
                 return df
             else:
                 logger.warning(f"[API返回] ak.stock_zh_a_hist 返回空数据")
@@ -529,8 +529,8 @@ class AkshareFetcher(BaseFetcher):
         
         Args:
             stock_code: ETF 代码，如 '512400', '159883'
-            start_date: 开始日期，格式 'YYYY-MM-DD'
-            end_date: 结束日期，格式 'YYYY-MM-DD'
+            start_date: Start date，格式 'YYYY-MM-DD'
+            end_date: End date，格式 'YYYY-MM-DD'
             
         Returns:
             ETF 历史数据 DataFrame
@@ -563,7 +563,7 @@ class AkshareFetcher(BaseFetcher):
             
             # 记录返回数据摘要
             if df is not None and not df.empty:
-                logger.info(f"[API返回] ak.fund_etf_hist_em 成功: 返回 {len(df)} 行数据, 耗时 {api_elapsed:.2f}s")
+                logger.info(f"[API返回] ak.fund_etf_hist_em Succeeded: 返回 {len(df)} 行数据, 耗时 {api_elapsed:.2f}s")
                 logger.info(f"[API返回] 列名: {list(df.columns)}")
                 logger.info(f"[API返回] 日期范围: {df['日期'].iloc[0]} ~ {df['日期'].iloc[-1]}")
                 logger.debug(f"[API返回] 最新3条数据:\n{df.tail(3).to_string()}")
@@ -580,7 +580,7 @@ class AkshareFetcher(BaseFetcher):
                 logger.warning(f"检测到可能被封禁: {e}")
                 raise RateLimitError(f"Akshare 可能被限流: {e}") from e
             
-            raise DataFetchError(f"Akshare 获取 ETF 数据失败: {e}") from e
+            raise DataFetchError(f"Akshare 获取 ETF 数据Failed: {e}") from e
     
     def _fetch_us_data(self, stock_code: str, start_date: str, end_date: str) -> pd.DataFrame:
         """
@@ -590,8 +590,8 @@ class AkshareFetcher(BaseFetcher):
         
         Args:
             stock_code: 美股代码，如 'AMD', 'AAPL', 'TSLA'
-            start_date: 开始日期，格式 'YYYY-MM-DD'
-            end_date: 结束日期，格式 'YYYY-MM-DD'
+            start_date: Start date，格式 'YYYY-MM-DD'
+            end_date: End date，格式 'YYYY-MM-DD'
             
         Returns:
             美股历史数据 DataFrame
@@ -624,7 +624,7 @@ class AkshareFetcher(BaseFetcher):
             
             # 记录返回数据摘要
             if df is not None and not df.empty:
-                logger.info(f"[API返回] ak.stock_us_daily 成功: 返回 {len(df)} 行数据, 耗时 {api_elapsed:.2f}s")
+                logger.info(f"[API返回] ak.stock_us_daily Succeeded: 返回 {len(df)} 行数据, 耗时 {api_elapsed:.2f}s")
                 logger.info(f"[API返回] 列名: {list(df.columns)}")
                 
                 # 按日期过滤
@@ -675,7 +675,7 @@ class AkshareFetcher(BaseFetcher):
                 logger.warning(f"检测到可能被封禁: {e}")
                 raise RateLimitError(f"Akshare 可能被限流: {e}") from e
             
-            raise DataFetchError(f"Akshare 获取美股数据失败: {e}") from e
+            raise DataFetchError(f"Akshare 获取美股数据Failed: {e}") from e
 
     def _fetch_hk_data(self, stock_code: str, start_date: str, end_date: str) -> pd.DataFrame:
         """
@@ -685,8 +685,8 @@ class AkshareFetcher(BaseFetcher):
         
         Args:
             stock_code: 港股代码，如 '00700', '01810'
-            start_date: 开始日期，格式 'YYYY-MM-DD'
-            end_date: 结束日期，格式 'YYYY-MM-DD'
+            start_date: Start date，格式 'YYYY-MM-DD'
+            end_date: End date，格式 'YYYY-MM-DD'
             
         Returns:
             港股历史数据 DataFrame
@@ -722,7 +722,7 @@ class AkshareFetcher(BaseFetcher):
             
             # 记录返回数据摘要
             if df is not None and not df.empty:
-                logger.info(f"[API返回] ak.stock_hk_hist 成功: 返回 {len(df)} 行数据, 耗时 {api_elapsed:.2f}s")
+                logger.info(f"[API返回] ak.stock_hk_hist Succeeded: 返回 {len(df)} 行数据, 耗时 {api_elapsed:.2f}s")
                 logger.info(f"[API返回] 列名: {list(df.columns)}")
                 logger.info(f"[API返回] 日期范围: {df['日期'].iloc[0]} ~ {df['日期'].iloc[-1]}")
                 logger.debug(f"[API返回] 最新3条数据:\n{df.tail(3).to_string()}")
@@ -739,7 +739,7 @@ class AkshareFetcher(BaseFetcher):
                 logger.warning(f"检测到可能被封禁: {e}")
                 raise RateLimitError(f"Akshare 可能被限流: {e}") from e
             
-            raise DataFetchError(f"Akshare 获取港股数据失败: {e}") from e
+            raise DataFetchError(f"Akshare 获取港股数据Failed: {e}") from e
     
     def _normalize_data(self, df: pd.DataFrame, stock_code: str) -> pd.DataFrame:
         """
@@ -768,7 +768,7 @@ class AkshareFetcher(BaseFetcher):
         # 重命名列
         df = df.rename(columns=column_mapping)
         
-        # 添加股票代码列
+        # 添加Stock code列
         df['code'] = stock_code
         
         # 只保留需要的列
@@ -785,14 +785,14 @@ class AkshareFetcher(BaseFetcher):
         数据源优先级（可配置）：
         1. em: 东方财富（akshare ak.stock_zh_a_spot_em）- 数据最全，含量比/PE/PB/市值等
         2. sina: 新浪财经（akshare ak.stock_zh_a_spot）- 轻量级，基本行情
-        3. tencent: 腾讯直连接口 - 单股票查询，负载小
+        3. tencent: 腾讯直连接口 - 单股票Query，负载小
 
         Args:
             stock_code: 股票/ETF代码
             source: 数据源类型，可选 "em", "sina", "tencent"
 
         Returns:
-            UnifiedRealtimeQuote 对象，获取失败返回 None
+            UnifiedRealtimeQuote 对象，获取Failed返回 None
         """
         circuit_breaker = get_realtime_circuit_breaker()
 
@@ -860,7 +860,7 @@ class AkshareFetcher(BaseFetcher):
                         df = ak.stock_zh_a_spot_em()
 
                         api_elapsed = _time.time() - api_start
-                        logger.info(f"[API返回] ak.stock_zh_a_spot_em 成功: 返回 {len(df)} 只股票, 耗时 {api_elapsed:.2f}s")
+                        logger.info(f"[API返回] ak.stock_zh_a_spot_em Succeeded: 返回 {len(df)} 只股票, 耗时 {api_elapsed:.2f}s")
                         circuit_breaker.record_success(source_key)
                         break
                     except Exception as e:
@@ -868,7 +868,7 @@ class AkshareFetcher(BaseFetcher):
                         logger.info(f"[API错误] ak.stock_zh_a_spot_em 获取失败 (attempt {attempt}/2): {e}")
                         time.sleep(min(2 ** attempt, 5))
 
-                # 更新缓存：成功缓存数据；失败也缓存空数据，避免同一轮任务对同一接口反复请求
+                # 更新缓存：Succeeded缓存数据；Failed也缓存空数据，避免同一轮任务对同一接口反复请求
                 if df is None:
                     logger.info(f"[API错误] ak.stock_zh_a_spot_em 最终失败: {last_error}")
                     circuit_breaker.record_failure(source_key, str(last_error))
@@ -927,8 +927,8 @@ class AkshareFetcher(BaseFetcher):
         """
         获取普通 A 股实时行情数据（新浪财经数据源）
         
-        数据来源：新浪财经接口（直连，单股票查询）
-        优点：单股票查询，负载小，速度快
+        数据来源：新浪财经接口（直连，单股票Query）
+        优点：单股票Query，负载小，速度快
         缺点：数据字段较少，无量比/PE/PB等
         
         接口格式：http://hq.sinajs.cn/list=sh600519,sz000001
@@ -1078,8 +1078,8 @@ class AkshareFetcher(BaseFetcher):
         """
         获取普通 A 股实时行情数据（腾讯财经数据源）
         
-        数据来源：腾讯财经接口（直连，单股票查询）
-        优点：单股票查询，负载小，包含换手率
+        数据来源：腾讯财经接口（直连，单股票Query）
+        优点：单股票Query，负载小，包含换手率
         缺点：无量比/PE/PB等估值数据
         
         接口格式：http://qt.gtimg.cn/q=sh600519,sz000001
@@ -1236,7 +1236,7 @@ class AkshareFetcher(BaseFetcher):
             stock_code: ETF 代码
             
         Returns:
-            UnifiedRealtimeQuote 对象，获取失败返回 None
+            UnifiedRealtimeQuote 对象，获取Failed返回 None
         """
         import akshare as ak
         circuit_breaker = get_realtime_circuit_breaker()
@@ -1265,7 +1265,7 @@ class AkshareFetcher(BaseFetcher):
                         df = ak.fund_etf_spot_em()
 
                         api_elapsed = _time.time() - api_start
-                        logger.info(f"[API返回] ak.fund_etf_spot_em 成功: 返回 {len(df)} 只ETF, 耗时 {api_elapsed:.2f}s")
+                        logger.info(f"[API返回] ak.fund_etf_spot_em Succeeded: 返回 {len(df)} 只ETF, 耗时 {api_elapsed:.2f}s")
                         circuit_breaker.record_success(source_key)
                         break
                     except Exception as e:
@@ -1336,7 +1336,7 @@ class AkshareFetcher(BaseFetcher):
             stock_code: 港股代码
 
         Returns:
-            UnifiedRealtimeQuote 对象，获取失败返回 None
+            UnifiedRealtimeQuote 对象，获取Failed返回 None
         """
         import akshare as ak
         circuit_breaker = get_realtime_circuit_breaker()
@@ -1453,10 +1453,10 @@ class AkshareFetcher(BaseFetcher):
         注意：ETF/指数没有筹码分布数据，会直接返回 None
         
         Args:
-            stock_code: 股票代码
+            stock_code: Stock code
             
         Returns:
-            ChipDistribution 对象（最新一天的数据），获取失败返回 None
+            ChipDistribution 对象（最新一天的数据），获取Failed返回 None
         """
         import akshare as ak
 
@@ -1492,7 +1492,7 @@ class AkshareFetcher(BaseFetcher):
                 logger.warning(f"[API返回] ak.stock_cyq_em 返回空数据, 耗时 {api_elapsed:.2f}s")
                 return None
             
-            logger.info(f"[API返回] ak.stock_cyq_em 成功: 返回 {len(df)} 天数据, 耗时 {api_elapsed:.2f}s")
+            logger.info(f"[API返回] ak.stock_cyq_em Succeeded: 返回 {len(df)} 天数据, 耗时 {api_elapsed:.2f}s")
             logger.debug(f"[API返回] 筹码数据列名: {list(df.columns)}")
             
             # 取最新一天的数据
@@ -1518,7 +1518,7 @@ class AkshareFetcher(BaseFetcher):
             return chip
             
         except Exception as e:
-            logger.error(f"[API错误] 获取 {stock_code} 筹码分布失败: {e}")
+            logger.error(f"[API错误] 获取 {stock_code} 筹码分布Failed: {e}")
             return None
     
     def get_enhanced_data(self, stock_code: str, days: int = 60) -> Dict[str, Any]:
@@ -1526,7 +1526,7 @@ class AkshareFetcher(BaseFetcher):
         获取增强数据（历史K线 + 实时行情 + 筹码分布）
         
         Args:
-            stock_code: 股票代码
+            stock_code: Stock code
             days: 历史数据天数
             
         Returns:
@@ -1544,7 +1544,7 @@ class AkshareFetcher(BaseFetcher):
             df = self.get_daily_data(stock_code, days=days)
             result['daily_data'] = df
         except Exception as e:
-            logger.error(f"获取 {stock_code} 日线数据失败: {e}")
+            logger.error(f"获取 {stock_code} 日线数据Failed: {e}")
         
         # 获取实时行情
         result['realtime_quote'] = self.get_realtime_quote(stock_code)
@@ -1617,7 +1617,7 @@ class AkshareFetcher(BaseFetcher):
             return results
 
         except Exception as e:
-            logger.error(f"[Akshare] 获取指数行情失败: {e}")
+            logger.error(f"[Akshare] 获取指数行情Failed: {e}")
             return None
 
     def get_market_stats(self) -> Optional[Dict[str, Any]]:
@@ -1640,9 +1640,9 @@ class AkshareFetcher(BaseFetcher):
             if df is not None and not df.empty:
                 return self._calc_market_stats(df)
         except Exception as e:
-            logger.warning(f"[Akshare] 东财接口获取市场统计失败: {e}，尝试新浪接口")
+            logger.warning(f"[Akshare] 东财接口获取市场统计Failed: {e}，尝试新浪接口")
 
-        # 东财失败后，尝试新浪接口
+        # 东财Failed后，尝试新浪接口
         try:
             self._set_random_user_agent()
             self._enforce_rate_limit()
@@ -1652,7 +1652,7 @@ class AkshareFetcher(BaseFetcher):
             if df is not None and not df.empty:
                 return self._calc_market_stats(df)
         except Exception as e:
-            logger.error(f"[Akshare] 新浪接口获取市场统计也失败: {e}")
+            logger.error(f"[Akshare] 新浪接口获取市场统计也Failed: {e}")
 
         return None
 
@@ -1667,8 +1667,8 @@ class AkshareFetcher(BaseFetcher):
         
         # 1. 提取基础比对数据：最新价、昨收
         # 兼容不同接口返回的列名 sina/em efinance tushare xtdata
-        code_col = next((c for c in ['代码', '股票代码', 'ts_code','stock_code'] if c in df.columns), None)
-        name_col = next((c for c in ['名称', '股票名称','name','name'] if c in df.columns), None)
+        code_col = next((c for c in ['代码', 'Stock code', 'ts_code','stock_code'] if c in df.columns), None)
+        name_col = next((c for c in ['名称', 'Stock name','name','name'] if c in df.columns), None)
         close_col = next((c for c in ['最新价', '最新价', 'close','lastPrice'] if c in df.columns), None)
         pre_close_col = next((c for c in ['昨收', '昨日收盘', 'pre_close','lastClose'] if c in df.columns), None)
         amount_col = next((c for c in ['成交额', '成交额', 'amount','amount'] if c in df.columns), None) 
@@ -1786,9 +1786,9 @@ class AkshareFetcher(BaseFetcher):
                 return _get_rank_top_n(df, change_col, name, n)
             
         except Exception as e:
-            logger.warning(f"[Akshare] 东财接口获取行业板块排行失败: {e}，尝试新浪接口")
+            logger.warning(f"[Akshare] 东财接口获取行业板块排行Failed: {e}，尝试新浪接口")
 
-        # 东财失败后，尝试新浪接口
+        # 东财Failed后，尝试新浪接口
         try:
             self._set_random_user_agent()
             self._enforce_rate_limit()
@@ -1802,7 +1802,7 @@ class AkshareFetcher(BaseFetcher):
             return _get_rank_top_n(df, change_col, name, n)
         
         except Exception as e:
-            logger.error(f"[Akshare] 新浪接口获取板块排行也失败: {e}")
+            logger.error(f"[Akshare] 新浪接口获取板块排行也Failed: {e}")
             return None
 
 
@@ -1818,10 +1818,10 @@ if __name__ == "__main__":
     print("=" * 50)
     try:
         df = fetcher.get_daily_data('600519')  # 茅台
-        print(f"[股票] 获取成功，共 {len(df)} 条数据")
+        print(f"[股票] 获取Succeeded，共 {len(df)} 条数据")
         print(df.tail())
     except Exception as e:
-        print(f"[股票] 获取失败: {e}")
+        print(f"[股票] 获取Failed: {e}")
     
     # 测试 ETF 基金
     print("\n" + "=" * 50)
@@ -1829,10 +1829,10 @@ if __name__ == "__main__":
     print("=" * 50)
     try:
         df = fetcher.get_daily_data('512400')  # 有色龙头ETF
-        print(f"[ETF] 获取成功，共 {len(df)} 条数据")
+        print(f"[ETF] 获取Succeeded，共 {len(df)} 条数据")
         print(df.tail())
     except Exception as e:
-        print(f"[ETF] 获取失败: {e}")
+        print(f"[ETF] 获取Failed: {e}")
     
     # 测试 ETF 实时行情
     print("\n" + "=" * 50)
@@ -1845,7 +1845,7 @@ if __name__ == "__main__":
         else:
             print("[ETF实时] 未获取到数据")
     except Exception as e:
-        print(f"[ETF实时] 获取失败: {e}")
+        print(f"[ETF实时] 获取Failed: {e}")
     
     # 测试港股历史数据
     print("\n" + "=" * 50)
@@ -1853,10 +1853,10 @@ if __name__ == "__main__":
     print("=" * 50)
     try:
         df = fetcher.get_daily_data('00700')  # 腾讯控股
-        print(f"[港股] 获取成功，共 {len(df)} 条数据")
+        print(f"[港股] 获取Succeeded，共 {len(df)} 条数据")
         print(df.tail())
     except Exception as e:
-        print(f"[港股] 获取失败: {e}")
+        print(f"[港股] 获取Failed: {e}")
     
     # 测试港股实时行情
     print("\n" + "=" * 50)
@@ -1869,7 +1869,7 @@ if __name__ == "__main__":
         else:
             print("[港股实时] 未获取到数据")
     except Exception as e:
-        print(f"[港股实时] 获取失败: {e}")
+        print(f"[港股实时] 获取Failed: {e}")
 
     # 测试市场统计
     print("\n" + "=" * 50)
@@ -1895,7 +1895,7 @@ if __name__ == "__main__":
     try:
         chip = fetcher.get_chip_distribution('600519')  # 茅台
     except Exception as e:
-        print(f"[筹码分布] 获取失败: {e}")
+        print(f"[筹码分布] 获取Failed: {e}")
 
     # 测试行业板块排名
     print("\n" + "=" * 50)
@@ -1914,4 +1914,4 @@ if __name__ == "__main__":
         else:
             print("未获取到行业板块排名数据")
     except Exception as e:
-        print(f"[行业板块排名] 获取失败: {e}")
+        print(f"[行业板块排名] 获取Failed: {e}")

@@ -4,9 +4,9 @@
 定时调度模块
 ===================================
 
-职责：
+Responsibilities:
 1. 支持每日定时执行股票分析
-2. 支持定时执行大盘复盘
+2. 支持定时执行Market review
 3. 优雅处理信号，确保可靠退出
 
 依赖：
@@ -43,7 +43,7 @@ class GracefulShutdown:
         """信号处理函数"""
         with self._lock:
             if not self.shutdown_requested:
-                logger.info(f"收到退出信号 ({signum})，等待当前任务完成...")
+                logger.info(f"收到退出信号 ({signum})，等待当前任务Completed...")
                 self.shutdown_requested = True
 
     @property
@@ -59,7 +59,7 @@ class Scheduler:
 
     基于 schedule 库实现，支持：
     - 每日定时执行
-    - 启动时立即执行
+    - Execute immediately on startup
     - 优雅退出
     """
 
@@ -72,7 +72,7 @@ class Scheduler:
         初始化调度器
 
         Args:
-            schedule_time: 每日执行时间，格式 "HH:MM"
+            schedule_time: Daily execution time，格式 "HH:MM"
         """
         try:
             import schedule
@@ -177,15 +177,15 @@ class Scheduler:
 
         try:
             logger.info("=" * 50)
-            logger.info(f"定时任务开始执行 - {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+            logger.info(f"定时任务Started执行 - {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
             logger.info("=" * 50)
 
             self._task_callback()
 
-            logger.info(f"定时任务执行完成 - {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+            logger.info(f"定时Task execution completed - {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
 
         except Exception as e:
-            logger.exception(f"定时任务执行失败: {e}")
+            logger.exception(f"定时任务Execution failed: {e}")
 
     def add_background_task(
         self,
@@ -234,10 +234,10 @@ class Scheduler:
 
         def _runner() -> None:
             try:
-                logger.info("后台任务开始执行: %s", entry["name"])
+                logger.info("后台任务Started执行: %s", entry["name"])
                 entry["task"]()
             except Exception as exc:
-                logger.exception("后台任务执行失败 [%s]: %s", entry["name"], exc)
+                logger.exception("后台任务Execution failed [%s]: %s", entry["name"], exc)
             finally:
                 entry["running"] = False
                 entry["thread"] = None
@@ -277,7 +277,7 @@ class Scheduler:
         阻塞运行，直到收到退出信号
         """
         self._running = True
-        logger.info("调度器开始运行...")
+        logger.info("调度器Started运行...")
         logger.info(f"下次执行时间: {self._get_next_run_time()}")
 
         while self._running and not self.shutdown_handler.should_shutdown:
@@ -317,7 +317,7 @@ def run_with_schedule(
 
     Args:
         task: 要执行的任务函数
-        schedule_time: 每日执行时间
+        schedule_time: Daily execution time
         run_immediately: 是否立即执行一次
         background_tasks: 可选的后台任务定义列表。每项为一个字典，
             需包含 `task` 与 `interval_seconds`，可选包含 `name`
@@ -350,7 +350,7 @@ if __name__ == "__main__":
     def test_task():
         print(f"任务执行中... {datetime.now()}")
         time.sleep(2)
-        print("任务完成!")
+        print("任务Completed!")
 
-    print("启动测试调度器（按 Ctrl+C 退出）")
+    print("启动测试调度器（Press Ctrl+C to exit）")
     run_with_schedule(test_task, schedule_time="23:59", run_immediately=True)

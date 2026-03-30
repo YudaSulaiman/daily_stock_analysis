@@ -4,8 +4,8 @@
 历史记录相关模型
 ===================================
 
-职责：
-1. 定义历史记录列表和详情模型
+Responsibilities:
+1. 定义History records list和详情模型
 2. 定义分析报告完整模型
 """
 
@@ -19,8 +19,8 @@ class HistoryItem(BaseModel):
 
     id: Optional[int] = Field(None, description="分析历史记录主键 ID")
     query_id: str = Field(..., description="分析记录关联 query_id（批量分析时重复）")
-    stock_code: str = Field(..., description="股票代码")
-    stock_name: Optional[str] = Field(None, description="股票名称")
+    stock_code: str = Field(..., description="Stock code")
+    stock_name: Optional[str] = Field(None, description="Stock name")
     report_type: Optional[str] = Field(None, description="报告类型")
     sentiment_score: Optional[int] = Field(
         None,
@@ -45,11 +45,11 @@ class HistoryItem(BaseModel):
 
 
 class HistoryListResponse(BaseModel):
-    """历史记录列表响应"""
+    """History records list响应"""
     
     total: int = Field(..., description="总记录数")
-    page: int = Field(..., description="当前页码")
-    limit: int = Field(..., description="每页数量")
+    page: int = Field(..., description="当前Page number")
+    limit: int = Field(..., description="Items per page")
     items: List[HistoryItem] = Field(default_factory=list, description="记录列表")
     
     class Config:
@@ -114,8 +114,8 @@ class ReportMeta(BaseModel):
 
     id: Optional[int] = Field(None, description="分析历史记录主键 ID（仅历史报告有此字段）")
     query_id: str = Field(..., description="分析记录关联 query_id（批量分析时重复）")
-    stock_code: str = Field(..., description="股票代码")
-    stock_name: Optional[str] = Field(None, description="股票名称")
+    stock_code: str = Field(..., description="Stock code")
+    stock_name: Optional[str] = Field(None, description="Stock name")
     report_type: Optional[str] = Field(None, description="报告类型")
     report_language: Optional[str] = Field(None, description="报告输出语言（zh/en）")
     created_at: Optional[str] = Field(None, description="创建时间")
@@ -150,7 +150,7 @@ class ReportDetails(BaseModel):
     """报告详情区"""
     
     news_content: Optional[str] = Field(None, description="新闻摘要")
-    raw_result: Optional[Any] = Field(None, description="原始分析结果（JSON）")
+    raw_result: Optional[Any] = Field(None, description="原始Analysis result（JSON）")
     context_snapshot: Optional[Any] = Field(None, description="分析时上下文快照（JSON）")
     financial_report: Optional[Any] = Field(None, description="结构化财报摘要（来自 fundamental_context）")
     dividend_metrics: Optional[Any] = Field(None, description="结构化分红指标（含 TTM 口径）")

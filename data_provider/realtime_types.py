@@ -6,10 +6,10 @@
 
 设计目标：
 1. 统一各数据源的实时行情返回结构
-2. 实现熔断/冷却机制，避免连续失败时反复请求
+2. 实现熔断/冷却机制，避免连续Failed时反复请求
 3. 支持多数据源故障切换
 
-使用方式：
+Usage:
 - 所有 Fetcher 的 get_realtime_quote() 统一返回 UnifiedRealtimeQuote
 - CircuitBreaker 管理各数据源的熔断状态
 """
@@ -43,7 +43,7 @@ def safe_float(val: Any, default: Optional[float] = None) -> Optional[float]:
     
     Args:
         val: 待转换的值
-        default: 转换失败时的默认值
+        default: 转换Failed时的默认值
         
     Returns:
         转换后的浮点数，或默认值
@@ -80,7 +80,7 @@ def safe_int(val: Any, default: Optional[int] = None) -> Optional[int]:
     
     Args:
         val: 待转换的值
-        default: 转换失败时的默认值
+        default: 转换Failed时的默认值
         
     Returns:
         转换后的整数，或默认值
@@ -272,15 +272,15 @@ class CircuitBreaker:
     熔断器 - 管理数据源的熔断/冷却状态
     
     策略：
-    - 连续失败 N 次后进入熔断状态
+    - 连续Failed N 次后进入熔断状态
     - 熔断期间跳过该数据源
     - 冷却时间后自动恢复半开状态
-    - 半开状态下单次成功则完全恢复，失败则继续熔断
+    - 半开状态下单次Succeeded则完全恢复，Failed则继续熔断
     
     状态机：
-    CLOSED（正常） --失败N次--> OPEN（熔断）--冷却时间到--> HALF_OPEN（半开）
-    HALF_OPEN --成功--> CLOSED
-    HALF_OPEN --失败--> OPEN
+    CLOSED（正常） --FailedN次--> OPEN（熔断）--冷却时间到--> HALF_OPEN（半开）
+    HALF_OPEN --Succeeded--> CLOSED
+    HALF_OPEN --Failed--> OPEN
     """
     
     # 状态常量
@@ -290,7 +290,7 @@ class CircuitBreaker:
     
     def __init__(
         self,
-        failure_threshold: int = 3,       # 连续失败次数阈值
+        failure_threshold: int = 3,       # 连续Failed次数阈值
         cooldown_seconds: float = 300.0,  # 冷却时间（秒），默认5分钟
         half_open_max_calls: int = 1      # 半开状态最大尝试次数
     ):
@@ -426,14 +426,14 @@ class CircuitBreaker:
 
 # 全局熔断器实例（实时行情专用）
 _realtime_circuit_breaker = CircuitBreaker(
-    failure_threshold=3,      # 连续失败3次熔断
+    failure_threshold=3,      # 连续Failed3次熔断
     cooldown_seconds=300.0,   # 冷却5分钟
     half_open_max_calls=1
 )
 
 # 筹码接口熔断器（更保守的策略，因为该接口更不稳定）
 _chip_circuit_breaker = CircuitBreaker(
-    failure_threshold=2,      # 连续失败2次熔断
+    failure_threshold=2,      # 连续Failed2次熔断
     cooldown_seconds=600.0,   # 冷却10分钟
     half_open_max_calls=1
 )

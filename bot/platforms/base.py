@@ -93,7 +93,7 @@ class BotPlatform(ABC):
         将统一响应转换为平台格式
         
         Args:
-            response: 统一响应对象
+            response: 统一Response object
             message: 原始消息对象（用于获取回复目标等信息）
             
         Returns:
@@ -152,7 +152,7 @@ class BotPlatform(ABC):
             (BotMessage, WebhookResponse) 元组
             - 如果是验证请求：(None, challenge_response)
             - 如果是普通消息：(message, None) - 响应将在命令处理后生成
-            - 如果验证失败或无需处理：(None, error_response 或 None)
+            - 如果验证Failed或无需处理：(None, error_response 或 None)
         """
         # 1. 检查是否是验证请求
         challenge_response = self.handle_challenge(data)

@@ -117,7 +117,7 @@ class DingtalkStreamHandler:
                     return AckMessage.STATUS_OK, 'OK'
 
                 except Exception as e:
-                    self.logger.error(f"[DingTalk Stream] 处理消息失败: {e}")
+                    self.logger.error(f"[DingTalk Stream] 处理消息Failed: {e}")
                     self.logger.exception(e)
                     return AckMessage.STATUS_SYSTEM_EXCEPTION, str(e)
 
@@ -179,7 +179,7 @@ class DingtalkStreamHandler:
             )
 
         except Exception as e:
-            logger.error(f"[DingTalk Stream] 解析消息失败: {e}")
+            logger.error(f"[DingTalk Stream] 解析消息Failed: {e}")
             return None
 
     def _extract_command(self, text: str) -> str:
@@ -195,7 +195,7 @@ class DingtalkStreamClient:
 
     封装 dingtalk-stream SDK，提供简单的启动接口。
 
-    使用方式：
+    Usage:
         client = DingtalkStreamClient()
         client.start()  # 阻塞运行
 
@@ -340,7 +340,7 @@ def start_dingtalk_stream_background() -> bool:
     在后台启动钉钉 Stream 客户端
 
     Returns:
-        是否成功启动
+        是否Succeeded启动
     """
     client = get_dingtalk_stream_client()
     if client:

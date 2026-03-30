@@ -99,7 +99,7 @@ class ChatCommand(BotCommand):
             if result.success:
                 return BotResponse.text_response(result.content)
             else:
-                return BotResponse.text_response(f"⚠️ 对话失败: {result.error}")
+                return BotResponse.text_response(f"⚠️ 对话Failed: {result.error}")
                 
         except Exception as e:
             logger.error(f"Chat command failed: {e}")

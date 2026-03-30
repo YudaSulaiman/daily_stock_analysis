@@ -4,7 +4,7 @@
 日志配置模块 - 统一的日志系统初始化
 ===================================
 
-职责：
+Responsibilities:
 1. 提供统一的日志格式和配置常量
 2. 支持控制台 + 文件（常规/调试）三层日志输出
 3. 自动降低第三方库日志级别
@@ -68,7 +68,7 @@ def setup_logging(
         log_prefix: 日志文件名前缀（如 "api_server" -> api_server_20240101.log）
         log_dir: 日志文件目录，默认 ./logs
         console_level: 控制台日志级别（可选，优先于 debug 参数）
-        debug: 是否启用调试模式（控制台输出 DEBUG 级别）
+        debug: 是否启用Debug mode（控制台输出 DEBUG 级别）
         extra_quiet_loggers: 额外需要降低日志级别的第三方库列表
     """
     # 确定控制台日志级别
@@ -134,7 +134,7 @@ def setup_logging(
     for logger_name in quiet_loggers:
         logging.getLogger(logger_name).setLevel(logging.WARNING)
 
-    # 输出初始化完成信息（使用相对路径）
+    # 输出初始化Completed信息（使用相对路径）
     try:
         rel_log_path = log_path.resolve().relative_to(project_root)
     except ValueError:
@@ -150,6 +150,6 @@ def setup_logging(
     except ValueError:
         rel_debug_log_file = debug_log_file
 
-    logging.info(f"日志系统初始化完成，日志目录: {rel_log_path}")
+    logging.info(f"日志系统初始化Completed，日志目录: {rel_log_path}")
     logging.info(f"常规日志: {rel_log_file}")
     logging.info(f"调试日志: {rel_debug_log_file}")
