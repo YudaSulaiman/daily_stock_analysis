@@ -276,7 +276,7 @@ def set_initial_password(password: str) -> Optional[str]:
         return None
     except OSError as e:
         logger.error("Failed to write credential file: %s", e)
-        return "密码保存失败"
+        return "密码Save failed"
 
 
 def verify_password(password: str) -> bool:
@@ -326,7 +326,7 @@ def change_password(current: str, new: str) -> Optional[str]:
         return None
     except OSError as e:
         logger.error("Failed to write credential file: %s", e)
-        return "密码保存失败"
+        return "密码Save failed"
 
 
 def create_session() -> str:
@@ -456,7 +456,7 @@ def overwrite_password(new_password: str) -> Optional[str]:
         return None
     except OSError as e:
         logger.error("Failed to write credential file: %s", e)
-        return "密码保存失败"
+        return "密码Save failed"
 
 
 def reset_password_cli() -> int:

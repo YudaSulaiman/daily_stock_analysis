@@ -2,7 +2,7 @@
 """
 Server酱3 发送提醒服务
 
-职责：
+Responsibilities:
 1. 通过 Server酱3 API 发送 Server酱3 消息
 """
 import logging
@@ -51,7 +51,7 @@ class Serverchan3Sender:
             title: 消息标题（可选）
 
         Returns:
-            是否发送成功
+            是否发送Succeeded
         """
         if not self._serverchan3_sendkey:
             logger.warning("Server酱3 SendKey 未配置，跳过推送")
@@ -91,15 +91,15 @@ class Serverchan3Sender:
 
             if response.status_code == 200:
                 result = response.json()
-                logger.info(f"Server酱3 消息发送成功: {result}")
+                logger.info(f"Server酱3 消息发送Succeeded: {result}")
                 return True
             else:
-                logger.error(f"Server酱3 请求失败: HTTP {response.status_code}")
+                logger.error(f"Server酱3 请求Failed: HTTP {response.status_code}")
                 logger.error(f"响应内容: {response.text}")
                 return False
 
         except Exception as e:
-            logger.error(f"发送 Server酱3 消息失败: {e}")
+            logger.error(f"发送 Server酱3 消息Failed: {e}")
             import traceback
             logger.debug(traceback.format_exc())
             return False

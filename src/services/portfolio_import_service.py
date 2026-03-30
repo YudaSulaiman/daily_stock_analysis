@@ -40,7 +40,7 @@ DEFAULT_PARSER_SPECS: Tuple[CsvParserSpec, ...] = (
         display_name="华泰",
         column_hints={
             "trade_date": ("成交日期", "成交时间", "发生日期", "日期"),
-            "symbol": ("证券代码", "股票代码", "代码"),
+            "symbol": ("证券代码", "Stock code", "代码"),
             "side": ("买卖标志", "买卖方向", "操作"),
             "quantity": ("成交数量", "数量", "成交股数"),
             "price": ("成交均价", "成交价格", "价格", "成交价", "均价"),
@@ -53,7 +53,7 @@ DEFAULT_PARSER_SPECS: Tuple[CsvParserSpec, ...] = (
         display_name="中信",
         column_hints={
             "trade_date": ("发生日期", "成交日期", "日期"),
-            "symbol": ("证券代码", "股票代码", "代码"),
+            "symbol": ("证券代码", "Stock code", "代码"),
             "side": ("买卖方向", "买卖标志", "业务名称"),
             "quantity": ("成交数量", "数量", "成交股数"),
             "price": ("成交价格", "成交均价", "价格", "成交价"),
@@ -66,7 +66,7 @@ DEFAULT_PARSER_SPECS: Tuple[CsvParserSpec, ...] = (
         display_name="招商",
         column_hints={
             "trade_date": ("日期", "成交日期", "发生日期"),
-            "symbol": ("证券代码", "股票代码", "代码"),
+            "symbol": ("证券代码", "Stock code", "代码"),
             "side": ("交易方向", "买卖方向", "买卖标志"),
             "quantity": ("成交股数", "成交数量", "数量"),
             "price": ("成交价", "成交价格", "成交均价", "均价"),
@@ -315,7 +315,7 @@ class PortfolioImportService:
             row,
             *(broker_hints.get("symbol") or ()),
             "证券代码",
-            "股票代码",
+            "Stock code",
             "代码",
         )
         symbol = canonical_stock_code(str(symbol_raw or "").strip())

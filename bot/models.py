@@ -165,7 +165,7 @@ class WebhookResponse:
     
     @classmethod
     def success(cls, body: Optional[Dict] = None) -> 'WebhookResponse':
-        """创建成功响应"""
+        """创建Succeeded响应"""
         return cls(status_code=200, body=body or {})
     
     @classmethod

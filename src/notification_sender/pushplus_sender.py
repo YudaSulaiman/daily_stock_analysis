@@ -2,7 +2,7 @@
 """
 PushPlus 发送提醒服务
 
-职责：
+Responsibilities:
 1. 通过 PushPlus API 发送 PushPlus 消息
 """
 import logging
@@ -54,7 +54,7 @@ class PushplusSender:
             title: 消息标题（可选）
 
         Returns:
-            是否发送成功
+            是否发送Succeeded
         """
         if not self._pushplus_token:
             logger.warning("PushPlus Token 未配置，跳过推送")
@@ -83,7 +83,7 @@ class PushplusSender:
 
             return self._send_pushplus_message(api_url, content, title)
         except Exception as e:
-            logger.error(f"发送 PushPlus 消息失败: {e}")
+            logger.error(f"发送 PushPlus 消息Failed: {e}")
             return False
 
     def _send_pushplus_message(self, api_url: str, content: str, title: str) -> bool:
@@ -102,14 +102,14 @@ class PushplusSender:
         if response.status_code == 200:
             result = response.json()
             if result.get('code') == 200:
-                logger.info("PushPlus 消息发送成功")
+                logger.info("PushPlus 消息发送Succeeded")
                 return True
 
             error_msg = result.get('msg', '未知错误')
             logger.error(f"PushPlus 返回错误: {error_msg}")
             return False
 
-        logger.error(f"PushPlus 请求失败: HTTP {response.status_code}")
+        logger.error(f"PushPlus 请求Failed: HTTP {response.status_code}")
         return False
 
     def _send_pushplus_chunked(self, api_url: str, content: str, title: str, max_bytes: int) -> bool:
@@ -125,9 +125,9 @@ class PushplusSender:
             chunk_title = f"{title} ({i+1}/{total_chunks})" if total_chunks > 1 else title
             if self._send_pushplus_message(api_url, chunk, chunk_title):
                 success_count += 1
-                logger.info(f"PushPlus 第 {i+1}/{total_chunks} 批发送成功")
+                logger.info(f"PushPlus 第 {i+1}/{total_chunks} 批发送Succeeded")
             else:
-                logger.error(f"PushPlus 第 {i+1}/{total_chunks} 批发送失败")
+                logger.error(f"PushPlus 第 {i+1}/{total_chunks} 批发送Failed")
 
             if i < total_chunks - 1:
                 time.sleep(1)

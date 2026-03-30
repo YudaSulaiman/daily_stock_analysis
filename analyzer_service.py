@@ -1,10 +1,10 @@
 # -*- coding: utf-8 -*-
 """
 ===================================
-A股自选股智能分析系统 - 分析服务层
+A-share Stock Intelligent Analysis System - 分析服务层
 ===================================
 
-职责：
+Responsibilities:
 1. 封装核心分析逻辑，支持多调用方（CLI、WebUI、Bot）
 2. 提供清晰的API接口，不依赖于命令行参数
 3. 支持依赖注入，便于测试和扩展
@@ -33,13 +33,13 @@ def analyze_stock(
     分析单只股票
     
     Args:
-        stock_code: 股票代码
+        stock_code: Stock code
         config: 配置对象（可选，默认使用单例）
         full_report: 是否生成完整报告
         notifier: 通知服务（可选）
         
     Returns:
-        分析结果对象
+        Analysis result对象
     """
     if config is None:
         config = get_config()
@@ -78,13 +78,13 @@ def analyze_stocks(
     分析多只股票
     
     Args:
-        stock_codes: 股票代码列表
+        stock_codes: Stock code列表
         config: 配置对象（可选，默认使用单例）
         full_report: 是否生成完整报告
         notifier: 通知服务（可选）
         
     Returns:
-        分析结果列表
+        Analysis result列表
     """
     if config is None:
         config = get_config()
@@ -102,7 +102,7 @@ def perform_market_review(
     notifier: Optional[NotificationService] = None
 ) -> Optional[str]:
     """
-    执行大盘复盘
+    执行Market review
     
     Args:
         config: 配置对象（可选，默认使用单例）
@@ -124,7 +124,7 @@ def perform_market_review(
     # 使用提供的通知服务或创建新的
     review_notifier = notifier or pipeline.notifier
     
-    # 调用大盘复盘函数
+    # 调用Market review函数
     return run_market_review(
         notifier=review_notifier,
         analyzer=pipeline.analyzer,

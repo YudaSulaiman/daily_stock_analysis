@@ -19,7 +19,7 @@ class BacktestRunRequest(BaseModel):
 class BacktestRunResponse(BaseModel):
     processed: int = Field(..., description="候选记录数")
     saved: int = Field(..., description="写入回测结果数")
-    completed: int = Field(..., description="完成回测数")
+    completed: int = Field(..., description="Completed回测数")
     insufficient: int = Field(..., description="数据不足数")
     errors: int = Field(..., description="错误数")
 

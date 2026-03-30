@@ -117,7 +117,7 @@ class DiscordPlatform(BotPlatform):
         """将统一响应转换为 Discord 格式
         
         Args:
-            response: 统一响应对象
+            response: 统一Response object
             message: 原始消息对象
             
         Returns:

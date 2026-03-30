@@ -4,9 +4,9 @@
 分析相关模型
 ===================================
 
-职责：
+Responsibilities:
 1. 定义分析请求和响应模型
-2. 定义任务状态模型
+2. 定义Task status模型
 3. 定义异步任务队列相关模型
 """
 
@@ -18,7 +18,7 @@ from src.utils.analysis_metadata import SELECTION_SOURCE_PATTERN
 
 
 class TaskStatusEnum(str, Enum):
-    """任务状态枚举"""
+    """Task status枚举"""
     PENDING = "pending"
     PROCESSING = "processing"
     COMPLETED = "completed"
@@ -30,12 +30,12 @@ class AnalyzeRequest(BaseModel):
     
     stock_code: Optional[str] = Field(
         None, 
-        description="单只股票代码", 
+        description="单只Stock code", 
         example="600519"
     )
     stock_codes: Optional[List[str]] = Field(
         None, 
-        description="多只股票代码（与 stock_code 二选一）",
+        description="多只Stock code（与 stock_code 二选一）",
         example=["600519", "000858"]
     )
     report_type: str = Field(
@@ -53,7 +53,7 @@ class AnalyzeRequest(BaseModel):
     )
     stock_name: Optional[str] = Field(
         None,
-        description="用户选中的股票名称（自动补全时提供）",
+        description="用户选中的Stock name（自动补全时提供）",
         example="贵州茅台"
     )
     original_query: Optional[str] = Field(
@@ -88,11 +88,11 @@ class AnalyzeRequest(BaseModel):
 
 
 class AnalysisResultResponse(BaseModel):
-    """分析结果响应模型"""
+    """Analysis result响应模型"""
     
     query_id: str = Field(..., description="分析记录唯一标识")
-    stock_code: str = Field(..., description="股票代码")
-    stock_name: Optional[str] = Field(None, description="股票名称")
+    stock_code: str = Field(..., description="Stock code")
+    stock_name: Optional[str] = Field(None, description="Stock name")
     report: Optional[Any] = Field(None, description="分析报告")
     created_at: str = Field(..., description="创建时间")
     
@@ -116,10 +116,10 @@ class AnalysisResultResponse(BaseModel):
 class TaskAccepted(BaseModel):
     """异步任务接受响应"""
     
-    task_id: str = Field(..., description="任务 ID，用于查询状态")
+    task_id: str = Field(..., description="任务 ID，用于Query状态")
     status: str = Field(
         ..., 
-        description="任务状态",
+        description="Task status",
         pattern="^(pending|processing)$"
     )
     message: Optional[str] = Field(None, description="提示信息")
@@ -135,13 +135,13 @@ class TaskAccepted(BaseModel):
 
 
 class BatchTaskAcceptedItem(BaseModel):
-    """批量异步任务中的单个成功提交项。"""
+    """批量异步任务中的单个Succeeded提交项。"""
 
-    task_id: str = Field(..., description="任务 ID，用于查询状态")
-    stock_code: str = Field(..., description="股票代码")
+    task_id: str = Field(..., description="任务 ID，用于Query状态")
+    stock_code: str = Field(..., description="Stock code")
     status: str = Field(
         ...,
-        description="任务状态",
+        description="Task status",
         pattern="^(pending|processing)$"
     )
     message: Optional[str] = Field(None, description="提示信息")
@@ -152,7 +152,7 @@ class BatchTaskAcceptedItem(BaseModel):
                 "task_id": "task_abc123",
                 "stock_code": "600519",
                 "status": "pending",
-                "message": "分析任务已加入队列: 600519"
+                "message": "Analysis task added to queue: 600519"
             }
         }
 
@@ -160,7 +160,7 @@ class BatchTaskAcceptedItem(BaseModel):
 class BatchDuplicateTaskItem(BaseModel):
     """批量异步任务中的重复提交项。"""
 
-    stock_code: str = Field(..., description="股票代码")
+    stock_code: str = Field(..., description="Stock code")
     existing_task_id: str = Field(..., description="已存在的任务 ID")
     message: str = Field(..., description="错误信息")
 
@@ -177,8 +177,8 @@ class BatchDuplicateTaskItem(BaseModel):
 class BatchTaskAcceptedResponse(BaseModel):
     """批量异步任务接受响应。"""
 
-    accepted: List[BatchTaskAcceptedItem] = Field(default_factory=list, description="成功提交的任务列表")
-    duplicates: List[BatchDuplicateTaskItem] = Field(default_factory=list, description="重复而跳过的任务列表")
+    accepted: List[BatchTaskAcceptedItem] = Field(default_factory=list, description="Succeeded提交的Task list")
+    duplicates: List[BatchDuplicateTaskItem] = Field(default_factory=list, description="重复而跳过的Task list")
     message: str = Field(..., description="汇总信息")
 
     class Config:
@@ -189,7 +189,7 @@ class BatchTaskAcceptedResponse(BaseModel):
                         "task_id": "task_abc123",
                         "stock_code": "600519",
                         "status": "pending",
-                        "message": "分析任务已加入队列: 600519"
+                        "message": "Analysis task added to queue: 600519"
                     }
                 ],
                 "duplicates": [
@@ -210,7 +210,7 @@ class TaskStatus(BaseModel):
     task_id: str = Field(..., description="任务 ID")
     status: str = Field(
         ..., 
-        description="任务状态",
+        description="Task status",
         pattern="^(pending|processing|completed|failed)$"
     )
     progress: Optional[int] = Field(
@@ -221,13 +221,13 @@ class TaskStatus(BaseModel):
     )
     result: Optional[AnalysisResultResponse] = Field(
         None, 
-        description="分析结果（仅在 completed 时存在）"
+        description="Analysis result（仅在 completed 时存在）"
     )
     error: Optional[str] = Field(
         None, 
         description="错误信息（仅在 failed 时存在）"
     )
-    stock_name: Optional[str] = Field(None, description="股票名称")
+    stock_name: Optional[str] = Field(None, description="Stock name")
     original_query: Optional[str] = Field(None, description="用户原始输入")
     selection_source: Optional[str] = Field(
         None,
@@ -258,15 +258,15 @@ class TaskInfo(BaseModel):
     """
     
     task_id: str = Field(..., description="任务 ID")
-    stock_code: str = Field(..., description="股票代码")
-    stock_name: Optional[str] = Field(None, description="股票名称")
-    status: TaskStatusEnum = Field(..., description="任务状态")
+    stock_code: str = Field(..., description="Stock code")
+    stock_name: Optional[str] = Field(None, description="Stock name")
+    status: TaskStatusEnum = Field(..., description="Task status")
     progress: int = Field(0, description="进度百分比 (0-100)", ge=0, le=100)
     message: Optional[str] = Field(None, description="状态消息")
     report_type: str = Field("detailed", description="报告类型")
     created_at: str = Field(..., description="创建时间")
-    started_at: Optional[str] = Field(None, description="开始执行时间")
-    completed_at: Optional[str] = Field(None, description="完成时间")
+    started_at: Optional[str] = Field(None, description="Started执行时间")
+    completed_at: Optional[str] = Field(None, description="Completed时间")
     error: Optional[str] = Field(None, description="错误信息（仅在 failed 时存在）")
     original_query: Optional[str] = Field(None, description="用户原始输入")
     selection_source: Optional[str] = Field(
@@ -296,12 +296,12 @@ class TaskInfo(BaseModel):
 
 
 class TaskListResponse(BaseModel):
-    """任务列表响应模型"""
+    """Task list响应模型"""
     
     total: int = Field(..., description="任务总数")
     pending: int = Field(..., description="等待中的任务数")
     processing: int = Field(..., description="处理中的任务数")
-    tasks: List[TaskInfo] = Field(..., description="任务列表")
+    tasks: List[TaskInfo] = Field(..., description="Task list")
     
     class Config:
         json_schema_extra = {
@@ -319,7 +319,7 @@ class DuplicateTaskErrorResponse(BaseModel):
     
     error: str = Field("duplicate_task", description="错误类型")
     message: str = Field(..., description="错误信息")
-    stock_code: str = Field(..., description="股票代码")
+    stock_code: str = Field(..., description="Stock code")
     existing_task_id: str = Field(..., description="已存在的任务 ID")
     
     class Config:

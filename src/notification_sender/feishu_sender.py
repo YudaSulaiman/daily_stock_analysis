@@ -2,7 +2,7 @@
 """
 飞书 发送提醒服务
 
-职责：
+Responsibilities:
 1. 通过 webhook 发送飞书消息
 """
 import logging
@@ -52,7 +52,7 @@ class FeishuSender:
             content: 消息内容（Markdown 会转为纯文本）
             
         Returns:
-            是否发送成功
+            是否发送Succeeded
         """
         if not self._feishu_url:
             logger.warning("飞书 Webhook 未配置，跳过推送")
@@ -72,7 +72,7 @@ class FeishuSender:
         try:
             return self._send_feishu_message(formatted_content)
         except Exception as e:
-            logger.error(f"发送飞书消息失败: {e}")
+            logger.error(f"发送飞书消息Failed: {e}")
             return False
    
     def _send_feishu_chunked(self, content: str, max_bytes: int) -> bool:
@@ -86,7 +86,7 @@ class FeishuSender:
             max_bytes: 单条消息最大字节数
             
         Returns:
-            是否全部发送成功
+            是否全部发送Succeeded
         """
         chunks = chunk_content_by_max_bytes(content, max_bytes, add_page_marker=True)
         
@@ -100,9 +100,9 @@ class FeishuSender:
             try:
                 if self._send_feishu_message(chunk):
                     success_count += 1
-                    logger.info(f"飞书第 {i+1}/{total_chunks} 批发送成功")
+                    logger.info(f"飞书第 {i+1}/{total_chunks} 批发送Succeeded")
                 else:
-                    logger.error(f"飞书第 {i+1}/{total_chunks} 批发送失败")
+                    logger.error(f"飞书第 {i+1}/{total_chunks} 批发送Failed")
             except Exception as e:
                 logger.error(f"飞书第 {i+1}/{total_chunks} 批发送异常: {e}")
             
@@ -132,7 +132,7 @@ class FeishuSender:
                 result = response.json()
                 code = result.get('code') if 'code' in result else result.get('StatusCode')
                 if code == 0:
-                    logger.info("飞书消息发送成功")
+                    logger.info("飞书消息发送Succeeded")
                     return True
                 else:
                     error_msg = result.get('msg') or result.get('StatusMessage', '未知错误')
@@ -141,7 +141,7 @@ class FeishuSender:
                     logger.error(f"完整响应: {result}")
                     return False
             else:
-                logger.error(f"飞书请求失败: HTTP {response.status_code}")
+                logger.error(f"飞书请求Failed: HTTP {response.status_code}")
                 logger.error(f"响应内容: {response.text}")
                 return False
 

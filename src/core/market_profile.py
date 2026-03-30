@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-大盘复盘市场区域配置
+Market review市场区域配置
 
 定义各市场区域的指数、新闻搜索词、Prompt 提示等元数据，
 供 MarketAnalyzer 按 region 切换 A 股/美股复盘行为。
@@ -12,7 +12,7 @@ from typing import List
 
 @dataclass
 class MarketProfile:
-    """大盘复盘市场区域配置"""
+    """Market review市场区域配置"""
 
     region: str  # "cn" | "us"
     # 用于判断整体走势的指数代码，cn 用上证 000001，us 用标普 SPX
