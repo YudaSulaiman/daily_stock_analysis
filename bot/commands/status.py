@@ -138,7 +138,7 @@ class StatusCommand(BotCommand):
             lines.extend([
                 "",
                 "---",
-                "✅ **系统就绪，可以开始分析！**",
+                "✅ **系统就绪，可以Started分析！**",
             ])
         else:
             lines.extend([

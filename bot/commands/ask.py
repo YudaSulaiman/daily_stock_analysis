@@ -41,11 +41,11 @@ class AskCommand(BotCommand):
 
     @property
     def description(self) -> str:
-        return "使用 Agent 技能分析股票"
+        return "使用 Agent 技能Analysis of stock"
 
     @property
     def usage(self) -> str:
-        return "/ask <股票代码[,代码2,...]> [技能名称]"
+        return "/ask <Stock code[,代码2,...]> [技能名称]"
 
     def _merge_code_args(self, args: List[str]) -> tuple[str, List[str]]:
         """Merge stock code arguments separated by commas or explicit ``vs`` markers."""
@@ -98,18 +98,18 @@ class AskCommand(BotCommand):
         is_us_stock = re.match(r"^[A-Z]{1,5}(\.[A-Z]{1,2})?$", normalized)
 
         if not (is_a_stock or is_hk_stock or is_us_stock):
-            return f"无效的股票代码: {normalized}（A股6位数字 / 港股HK+5位数字 / 美股1-5个字母）"
+            return f"无效的Stock code: {normalized}（A股6位数字 / 港股HK+5位数字 / 美股1-5个字母）"
         return None
 
     def validate_args(self, args: List[str]) -> Optional[str]:
         """Validate arguments."""
         if not args:
-            return "请输入股票代码。用法: /ask <股票代码[,代码2,...]> [技能名称]"
+            return "请输入Stock code。用法: /ask <Stock code[,代码2,...]> [技能名称]"
 
         raw_code_str, _ = self._merge_code_args(args)
         codes = self._parse_stock_codes(raw_code_str)
         if not codes:
-            return "请输入至少一个有效的股票代码"
+            return "请输入至少一个有效的Stock code"
 
         for code in codes:
             error = self._validate_single_code(code)
@@ -194,11 +194,11 @@ class AskCommand(BotCommand):
 
     @staticmethod
     def _build_user_message(stock_code: str, skill_id: str, skill_text: str) -> str:
-        user_msg = f"请分析股票 {stock_code}"
+        user_msg = f"请Analysis of stock {stock_code}"
         if skill_id:
-            user_msg = f"请使用 {skill_id} 技能分析股票 {stock_code}"
+            user_msg = f"请使用 {skill_id} 技能Analysis of stock {stock_code}"
         if skill_text:
-            user_msg = f"请分析股票 {stock_code}，{skill_text}"
+            user_msg = f"请Analysis of stock {stock_code}，{skill_text}"
         return user_msg
 
     def execute(self, message: BotMessage, args: List[str]) -> BotResponse:
@@ -247,7 +247,7 @@ class AskCommand(BotCommand):
                 skill_name = self._resolve_skill_name(skill_id)
                 header = f"📊 {code} | 技能: {skill_name}\n{'─' * 30}\n"
                 return BotResponse.text_response(header + result.content)
-            return BotResponse.text_response(f"⚠️ 分析失败: {result.error}")
+            return BotResponse.text_response(f"⚠️ Analysis failed: {result.error}")
 
         except Exception as exc:
             logger.error("Ask command failed: %s", exc)
@@ -307,7 +307,7 @@ class AskCommand(BotCommand):
                         None,
                     )
 
-                error_note = f"[分析失败] {result.error or '未知错误'}"
+                error_note = f"[Analysis failed] {result.error or '未知错误'}"
                 conversation_manager.add_message(session_id, "assistant", error_note)
                 return (stock_code, None, result.error or "未知错误")
             except Exception as exc:
@@ -343,7 +343,7 @@ class AskCommand(BotCommand):
                     except Exception as exc:
                         errors[code] = f"执行异常: {exc}"
                 else:
-                    errors[code] = "分析超时（未在 150 秒内完成）"
+                    errors[code] = "分析超时（未在 150 秒内Completed）"
         finally:
             pool.shutdown(wait=False, cancel_futures=True)
 
@@ -373,7 +373,7 @@ class AskCommand(BotCommand):
                     signal = item.get("signal") or "unknown"
                     confidence = item.get("confidence")
                     confidence_text = f"{confidence:.0%}" if isinstance(confidence, (int, float)) else "-"
-                    summary_line = str(item.get("summary") or "分析完成").replace("|", "/")[:80]
+                    summary_line = str(item.get("summary") or "分析Completed").replace("|", "/")[:80]
                     parts.append(f"| {code} | {signal} | {confidence_text} | {summary_line} |")
                 elif code in errors:
                     parts.append(f"| {code} | error | - | ⚠️ {errors[code][:40]} |")
@@ -386,7 +386,7 @@ class AskCommand(BotCommand):
                 parts.append("")
             elif code in errors:
                 parts.append(f"### {code}")
-                parts.append(f"⚠️ 分析失败: {errors[code]}")
+                parts.append(f"⚠️ Analysis failed: {errors[code]}")
                 parts.append("")
 
         return BotResponse.markdown_response("\n".join(parts))
@@ -455,7 +455,7 @@ class AskCommand(BotCommand):
             stripped = line.strip()
             if stripped and len(stripped) > 4 and not stripped.startswith(("{", "}", "\"")):
                 return stripped[:120]
-        return f"{stock_code} 分析完成"
+        return f"{stock_code} 分析Completed"
 
     @staticmethod
     def _extract_risk_flags(dashboard: Optional[Dict[str, Any]]) -> List[Dict[str, str]]:
@@ -509,7 +509,7 @@ class AskCommand(BotCommand):
         if not isinstance(dashboard, dict):
             content = raw_content
             if len(content) > 800:
-                content = content[:800] + "\n... (已截断，完整分析请单独查询)"
+                content = content[:800] + "\n... (已截断，完整分析请单独Query)"
             return content
 
         lines = []

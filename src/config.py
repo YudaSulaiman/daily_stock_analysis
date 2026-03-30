@@ -1,10 +1,10 @@
 # -*- coding: utf-8 -*-
 """
 ===================================
-A股自选股智能分析系统 - 配置管理模块
+A-share Stock Intelligent Analysis System - 配置管理模块
 ===================================
 
-职责：
+Responsibilities:
 1. 使用单例模式管理全局配置
 2. 从 .env 文件加载敏感配置
 3. 提供类型安全的配置访问接口
@@ -586,7 +586,7 @@ class Config:
     report_type: str = "simple"
     report_language: str = "zh"
 
-    # 仅分析结果摘要：true 时只推送汇总，不含个股详情（Issue #262）
+    # 仅Analysis Results Summary：true 时只推送汇总，不含个股详情（Issue #262）
     report_summary_only: bool = False
 
     # Report Engine P0: Jinja2 renderer and integrity checks
@@ -651,8 +651,8 @@ class Config:
     schedule_time: str = "18:00"              # 每日推送时间（HH:MM 格式）
     schedule_run_immediately: bool = True     # 启动时是否立即执行一次
     run_immediately: bool = True              # 启动时是否立即执行一次（非定时模式）
-    market_review_enabled: bool = True        # 是否启用大盘复盘
-    # 大盘复盘市场区域：cn(A股)、us(美股)、both(两者)，us 适合仅关注美股的用户
+    market_review_enabled: bool = True        # 是否启用Market review
+    # Market review市场区域：cn(A股)、us(美股)、both(两者)，us 适合仅关注美股的用户
     market_review_region: str = "cn"
     # 交易日检查：默认启用，非交易日跳过执行；设为 false 或 --force-run 可强制执行（Issue #373）
     trading_day_check_enabled: bool = True
@@ -668,7 +668,7 @@ class Config:
     enable_eastmoney_patch: bool = False
     # 实时行情数据源优先级（逗号分隔）
     # 推荐顺序：tencent > akshare_sina > efinance > akshare_em > tushare
-    # - tencent: 腾讯财经，有量比/换手率/市盈率等，单股查询稳定（推荐）
+    # - tencent: 腾讯财经，有量比/换手率/市盈率等，单股Query稳定（推荐）
     # - akshare_sina: 新浪财经，基本行情稳定，但无量比
     # - efinance/akshare_em: 东财全量接口，数据最全但容易被封
     # - tushare: Tushare Pro，需要2000积分，数据全面（付费用户可优先使用）
@@ -685,7 +685,7 @@ class Config:
     fundamental_stage_timeout_seconds: float = 1.5
     # 单能力源调用超时（秒）
     fundamental_fetch_timeout_seconds: float = 0.8
-    # 单能力失败重试次数（已包含首次）
+    # 单能力Failed重试次数（已包含首次）
     fundamental_retry_max: int = 1
     # 基本面上下文短 TTL（秒）
     fundamental_cache_ttl_seconds: int = 120
@@ -817,7 +817,7 @@ class Config:
         setup_env()
 
         # === 智能代理配置 (关键修复) ===
-        # 如果配置了代理，自动设置 NO_PROXY 以排除国内数据源，避免行情获取失败
+        # 如果配置了代理，自动设置 NO_PROXY 以排除国内数据源，避免行情获取Failed
         http_proxy = os.getenv('HTTP_PROXY') or os.getenv('http_proxy')
         if http_proxy:
             # 国内金融数据源域名列表
@@ -1289,7 +1289,7 @@ class Config:
             # 东财接口补丁开关
             enable_eastmoney_patch=os.getenv('ENABLE_EASTMONEY_PATCH', 'false').lower() == 'true',
             # 实时行情数据源优先级：
-            # - tencent: 腾讯财经，有量比/换手率/PE/PB等，单股查询稳定（推荐）
+            # - tencent: 腾讯财经，有量比/换手率/PE/PB等，单股Query稳定（推荐）
             # - akshare_sina: 新浪财经，基本行情稳定，但无量比
             # - efinance/akshare_em: 东财全量接口，数据最全但容易被封
             # - tushare: Tushare Pro，需要2000积分，数据全面
@@ -1696,7 +1696,7 @@ class Config:
 
     @classmethod
     def _parse_market_review_region(cls, value: str) -> str:
-        """解析大盘复盘市场区域，非法值记录警告后回退为 cn"""
+        """解析Market review市场区域，非法值记录警告后回退为 cn"""
         import logging
         v = (value or 'cn').strip().lower()
         if v in ('cn', 'us', 'both'):
@@ -1813,7 +1813,7 @@ class Config:
             env_values = dotenv_values(env_path)
             stock_list_str = (env_values.get('STOCK_LIST') or '').strip()
 
-        # 如果 .env 文件不存在或未配置，才尝试从系统环境变量读取
+        # 如果 .env 文件Does not exist或未配置，才尝试从系统环境变量读取
         if not stock_list_str:
             stock_list_str = os.getenv('STOCK_LIST', '')
 
@@ -1912,7 +1912,7 @@ class Config:
                 issues.append(ConfigIssue(
                     severity="error",
                     message=(
-                        "LITELLM_MODEL 已配置，但当前渠道/配置文件中不存在该模型。"
+                        "LITELLM_MODEL 已配置，但当前渠道/配置文件中Does not exist该模型。"
                         f" 当前可用模型：{', '.join(available_router_models[:6])}"
                     ),
                     field="LITELLM_MODEL",
@@ -1927,7 +1927,7 @@ class Config:
                 issues.append(ConfigIssue(
                     severity="error",
                     message=(
-                        "AGENT_LITELLM_MODEL 已配置，但当前渠道/配置文件中不存在该模型。"
+                        "AGENT_LITELLM_MODEL 已配置，但当前渠道/配置文件中Does not exist该模型。"
                         f" 当前可用模型：{', '.join(available_router_models[:6])}"
                     ),
                     field="AGENT_LITELLM_MODEL",
@@ -1969,7 +1969,7 @@ class Config:
             issues.append(ConfigIssue(
                 severity="error",
                 message=(
-                    "AGENT_LITELLM_MODEL 已配置，但未找到可用的运行时来源"
+                    "AGENT_LITELLM_MODEL 已配置，但Not found可用的运行时来源"
                     "（启用渠道或匹配的 API Key）。"
                 ),
                 field="AGENT_LITELLM_MODEL",
@@ -2002,7 +2002,7 @@ class Config:
         if not has_notification:
             issues.append(ConfigIssue(
                 severity="warning",
-                message="未配置通知渠道，将不发送推送通知",
+                message="未配置通知渠道，将Do not send push notifications",
                 field="WECHAT_WEBHOOK_URL",
             ))
 
@@ -2057,9 +2057,9 @@ class Config:
                 issues.append(ConfigIssue(
                     severity="warning",
                     message=(
-                        "VISION_MODEL 已配置，但未找到可用的 Vision API Key "
+                        "VISION_MODEL 已配置，但Not found可用的 Vision API Key "
                         f"（已检查：{', '.join(_checked)}）。"
-                        "图片股票代码提取功能将不可用，请配置对应的 API Key。"
+                        "图片Stock code提取功能将不可用，请配置对应的 API Key。"
                     ),
                     field="VISION_MODEL",
                 ))
@@ -2081,7 +2081,7 @@ class Config:
         """
         获取 SQLAlchemy 数据库连接 URL
         
-        自动创建数据库目录（如果不存在）
+        自动创建数据库目录（如果Does not exist）
         """
         db_path = Path(self.database_path)
         db_path.parent.mkdir(parents=True, exist_ok=True)
@@ -2143,9 +2143,9 @@ if __name__ == "__main__":
     print(f"自选股列表: {config.stock_list}")
     print(f"数据库路径: {config.database_path}")
     print(f"最大并发数: {config.max_workers}")
-    print(f"调试模式: {config.debug}")
+    print(f"Debug mode: {config.debug}")
     
-    # 验证配置
+    # Validate configuration
     warnings = config.validate()
     if warnings:
         print("\n配置验证结果:")

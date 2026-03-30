@@ -1,10 +1,10 @@
 # -*- coding: utf-8 -*-
 """
 ===================================
-A股自选股智能分析系统 - 核心分析流水线
+A-share Stock Intelligent Analysis System - 核心分析流水线
 ===================================
 
-职责：
+Responsibilities:
 1. 管理整个分析流程
 2. 协调数据获取、存储、搜索、分析、通知等模块
 3. 实现并发控制和异常处理
@@ -55,7 +55,7 @@ class StockAnalysisPipeline:
     """
     股票分析主流程调度器
     
-    职责：
+    Responsibilities:
     1. 管理整个分析流程
     2. 协调数据获取、存储、搜索、分析、通知等模块
     3. 实现并发控制和异常处理
@@ -108,7 +108,7 @@ class StockAnalysisPipeline:
             news_strategy_profile=getattr(self.config, "news_strategy_profile", "short"),
         )
         
-        logger.info(f"调度器初始化完成，最大并发数: {self.max_workers}")
+        logger.info(f"调度器初始化Completed，最大并发数: {self.max_workers}")
         logger.info("已启用技术分析引擎（均线/趋势/量价指标）")
         # 打印实时行情/筹码配置状态
         if self.config.enable_realtime_quote:
@@ -146,11 +146,11 @@ class StockAnalysisPipeline:
         3. 否则从数据源获取并保存
         
         Args:
-            code: 股票代码
+            code: Stock code
             force_refresh: 是否强制刷新（忽略本地缓存）
             
         Returns:
-            Tuple[是否成功, 错误信息]
+            Tuple[是否Succeeded, 错误信息]
         """
         stock_name = code
         try:
@@ -170,7 +170,7 @@ class StockAnalysisPipeline:
                 return True, None
 
             # 从数据源获取数据
-            logger.info(f"{stock_name}({code}) 开始从数据源获取数据...")
+            logger.info(f"{stock_name}({code}) Started从数据源获取数据...")
             df, source_name = self.fetcher_manager.get_daily_data(code, days=30)
 
             if df is None or df.empty:
@@ -178,12 +178,12 @@ class StockAnalysisPipeline:
 
             # 保存到数据库
             saved_count = self.db.save_daily_data(df, code, source_name)
-            logger.info(f"{stock_name}({code}) 数据保存成功（来源: {source_name}，新增 {saved_count} 条）")
+            logger.info(f"{stock_name}({code}) 数据保存Succeeded（来源: {source_name}，新增 {saved_count} 条）")
 
             return True, None
 
         except Exception as e:
-            error_msg = f"获取/保存数据失败: {str(e)}"
+            error_msg = f"获取/保存数据Failed: {str(e)}"
             logger.error(f"{stock_name}({code}) {error_msg}")
             return False, error_msg
     
@@ -200,12 +200,12 @@ class StockAnalysisPipeline:
         6. 调用 AI 进行综合分析
         
         Args:
-            query_id: 查询链路关联 id
-            code: 股票代码
+            query_id: Query链路关联 id
+            code: Stock code
             report_type: 报告类型
             
         Returns:
-            AnalysisResult 或 None（如果分析失败）
+            AnalysisResult 或 None（如果Analysis failed）
         """
         try:
             # 获取股票名称（先走轻量名称路径，后续若 realtime_quote 有 name 再覆盖）
@@ -245,9 +245,9 @@ class StockAnalysisPipeline:
                     logger.info(f"{stock_name}({code}) 筹码分布: 获利比例={chip_data.profit_ratio:.1%}, "
                               f"90%集中度={chip_data.concentration_90:.2%}")
                 else:
-                    logger.debug(f"{stock_name}({code}) 筹码分布获取失败或已禁用")
+                    logger.debug(f"{stock_name}({code}) 筹码分布获取Failed或已禁用")
             except Exception as e:
-                logger.warning(f"{stock_name}({code}) 获取筹码分布失败: {e}")
+                logger.warning(f"{stock_name}({code}) 获取筹码分布Failed: {e}")
 
             # If agent mode is explicitly enabled, or specific agent skills are configured, use the Agent analysis pipeline.
             # NOTE: use config.agent_mode (explicit opt-in) instead of
@@ -263,7 +263,7 @@ class StockAnalysisPipeline:
                     logger.info(f"{stock_name}({code}) Auto-enabled agent mode due to configured skills: {configured_skills}")
 
             # Step 2.5: 基本面能力聚合（统一入口，异常降级）
-            # - 失败时返回 partial/failed，不影响既有技术面/新闻链路
+            # - Failed时返回 partial/failed，不影响既有技术面/新闻链路
             # - 关闭开关时仍返回 not_supported 结构
             fundamental_context = None
             try:
@@ -272,7 +272,7 @@ class StockAnalysisPipeline:
                     budget_seconds=getattr(self.config, 'fundamental_stage_timeout_seconds', 1.5),
                 )
             except Exception as e:
-                logger.warning(f"{stock_name}({code}) 基本面聚合失败: {e}")
+                logger.warning(f"{stock_name}({code}) 基本面聚合Failed: {e}")
                 fundamental_context = self.fetcher_manager.build_failed_fundamental_context(code, str(e))
 
             fundamental_context = self._attach_belong_boards_to_fundamental_context(
@@ -290,7 +290,7 @@ class StockAnalysisPipeline:
                     coverage=fundamental_context.get("coverage", {}),
                 )
             except Exception as e:
-                logger.debug(f"{stock_name}({code}) 基本面快照写入失败: {e}")
+                logger.debug(f"{stock_name}({code}) 基本面快照写入Failed: {e}")
 
             # Step 3: 趋势分析（基于交易理念）— 在 Agent 分支之前执行，供两条路径共用
             trend_result: Optional[TrendAnalysisResult] = None
@@ -307,7 +307,7 @@ class StockAnalysisPipeline:
                     logger.info(f"{stock_name}({code}) 趋势分析: {trend_result.trend_status.value}, "
                               f"买入信号={trend_result.buy_signal.value}, 评分={trend_result.signal_score}")
             except Exception as e:
-                logger.warning(f"{stock_name}({code}) 趋势分析失败: {e}", exc_info=True)
+                logger.warning(f"{stock_name}({code}) 趋势Analysis failed: {e}", exc_info=True)
 
             if use_agent:
                 logger.info(f"{stock_name}({code}) 启用 Agent 模式进行分析")
@@ -325,7 +325,7 @@ class StockAnalysisPipeline:
             # Step 4: 多维度情报搜索（最新消息+风险排查+业绩预期）
             news_context = None
             if self.search_service.is_available:
-                logger.info(f"{stock_name}({code}) 开始多维度情报搜索...")
+                logger.info(f"{stock_name}({code}) Started多维度情报搜索...")
 
                 # 使用多维度搜索（最多5次搜索）
                 intel_results = self.search_service.search_comprehensive_intel(
@@ -340,10 +340,10 @@ class StockAnalysisPipeline:
                     total_results = sum(
                         len(r.results) for r in intel_results.values() if r.success
                     )
-                    logger.info(f"{stock_name}({code}) 情报搜索完成: 共 {total_results} 条结果")
+                    logger.info(f"{stock_name}({code}) 情报搜索Completed: 共 {total_results} 条结果")
                     logger.debug(f"{stock_name}({code}) 情报搜索结果:\n{news_context}")
 
-                    # 保存新闻情报到数据库（用于后续复盘与查询）
+                    # 保存新闻情报到数据库（用于后续复盘与Query）
                     try:
                         query_context = self._build_query_context(query_id=query_id)
                         for dim_name, response in intel_results.items():
@@ -357,7 +357,7 @@ class StockAnalysisPipeline:
                                     query_context=query_context
                                 )
                     except Exception as e:
-                        logger.warning(f"{stock_name}({code}) 保存新闻情报失败: {e}")
+                        logger.warning(f"{stock_name}({code}) 保存新闻情报Failed: {e}")
             else:
                 logger.info(f"{stock_name}({code}) 搜索服务不可用，跳过情报搜索")
 
@@ -388,13 +388,13 @@ class StockAnalysisPipeline:
                     'yesterday': {}
                 }
             
-            # Step 6: 增强上下文数据（添加实时行情、筹码、趋势分析结果、股票名称）
+            # Step 6: 增强上下文数据（添加实时行情、筹码、趋势Analysis result、Stock name）
             enhanced_context = self._enhance_context(
                 context, 
                 realtime_quote, 
                 chip_data,
                 trend_result,
-                stock_name,  # 传入股票名称
+                stock_name,  # 传入Stock name
                 fundamental_context,
             )
             
@@ -434,12 +434,12 @@ class StockAnalysisPipeline:
                         save_snapshot=self.save_context_snapshot
                     )
                 except Exception as e:
-                    logger.warning(f"{stock_name}({code}) 保存分析历史失败: {e}")
+                    logger.warning(f"{stock_name}({code}) 保存分析历史Failed: {e}")
 
             return result
 
         except Exception as e:
-            logger.error(f"{stock_name}({code}) 分析失败: {e}")
+            logger.error(f"{stock_name}({code}) Analysis failed: {e}")
             logger.exception(f"{stock_name}({code}) 详细错误信息:")
             return None
     
@@ -455,14 +455,14 @@ class StockAnalysisPipeline:
         """
         增强分析上下文
         
-        将实时行情、筹码分布、趋势分析结果、股票名称添加到上下文中
+        将实时行情、筹码分布、趋势Analysis result、Stock name添加到上下文中
         
         Args:
             context: 原始上下文
             realtime_quote: 实时行情数据（UnifiedRealtimeQuote 或 None）
             chip_data: 筹码分布数据
-            trend_result: 趋势分析结果
-            stock_name: 股票名称
+            trend_result: 趋势Analysis result
+            stock_name: Stock name
             
         Returns:
             增强后的上下文
@@ -470,7 +470,7 @@ class StockAnalysisPipeline:
         enhanced = context.copy()
         enhanced["report_language"] = normalize_report_language(getattr(self.config, "report_language", "zh"))
         
-        # 添加股票名称
+        # 添加Stock name
         if stock_name:
             enhanced['stock_name'] = stock_name
         elif realtime_quote and getattr(realtime_quote, 'name', None):
@@ -511,7 +511,7 @@ class StockAnalysisPipeline:
                 'chip_status': chip_data.get_chip_status(current_price or 0),
             }
         
-        # 添加趋势分析结果
+        # 添加趋势Analysis result
         if trend_result:
             enhanced['trend_analysis'] = {
                 'trend_status': trend_result.trend_status.value,
@@ -715,7 +715,7 @@ class StockAnalysisPipeline:
             if report_language == "en":
                 message = f"Analyze stock {code} ({stock_name}) and return the full decision dashboard JSON in English."
             else:
-                message = f"请分析股票 {code} ({stock_name})，并生成决策仪表盘报告。"
+                message = f"请Analysis of stock {code} ({stock_name})，并生成决策仪表盘报告。"
             agent_result = executor.run(message, context=initial_context)
 
             # 转换为 AnalysisResult
@@ -764,7 +764,7 @@ class StockAnalysisPipeline:
                         )
                         logger.info(f"[{code}] Agent 模式: 新闻情报已保存 {len(news_response.results)} 条")
                 except Exception as e:
-                    logger.warning(f"[{code}] Agent 模式保存新闻情报失败: {e}")
+                    logger.warning(f"[{code}] Agent 模式保存新闻情报Failed: {e}")
 
             # 保存分析历史记录
             if result:
@@ -779,12 +779,12 @@ class StockAnalysisPipeline:
                         save_snapshot=self.save_context_snapshot
                     )
                 except Exception as e:
-                    logger.warning(f"[{code}] 保存 Agent 分析历史失败: {e}")
+                    logger.warning(f"[{code}] 保存 Agent 分析历史Failed: {e}")
 
             return result
 
         except Exception as e:
-            logger.error(f"[{code}] Agent 分析失败: {e}")
+            logger.error(f"[{code}] Agent Analysis failed: {e}")
             logger.exception(f"[{code}] Agent 详细错误信息:")
             return None
 
@@ -1064,7 +1064,7 @@ class StockAnalysisPipeline:
 
     def _build_query_context(self, query_id: Optional[str] = None) -> Dict[str, str]:
         """
-        生成用户查询关联信息
+        生成用户Query关联信息
         """
         effective_query_id = query_id or self.query_id or ""
 
@@ -1105,8 +1105,8 @@ class StockAnalysisPipeline:
         此方法会被线程池调用，需要处理好异常
 
         Args:
-            analysis_query_id: 查询链路关联 id
-            code: 股票代码
+            analysis_query_id: Query链路关联 id
+            code: Stock code
             skip_analysis: 是否跳过 AI 分析
             single_stock_notify: 是否启用单股推送模式（每分析完一只立即推送）
             report_type: 报告类型枚举（从配置读取，Issue #119）
@@ -1114,15 +1114,15 @@ class StockAnalysisPipeline:
         Returns:
             AnalysisResult 或 None
         """
-        logger.info(f"========== 开始处理 {code} ==========")
+        logger.info(f"========== Started处理 {code} ==========")
         
         try:
             # Step 1: 获取并保存数据
             success, error = self.fetch_and_save_stock_data(code)
             
             if not success:
-                logger.warning(f"[{code}] 数据获取失败: {error}")
-                # 即使获取失败，也尝试用已有数据分析
+                logger.warning(f"[{code}] 数据获取Failed: {error}")
+                # 即使获取Failed，也尝试用已有数据分析
             
             # Step 2: AI 分析
             if skip_analysis:
@@ -1135,11 +1135,11 @@ class StockAnalysisPipeline:
             if result:
                 if not result.success:
                     logger.warning(
-                        f"[{code}] 分析未成功: {result.error_message or '未知错误'}"
+                        f"[{code}] 分析未Succeeded: {result.error_message or '未知错误'}"
                     )
                 else:
                     logger.info(
-                        f"[{code}] 分析完成: {result.operation_advice}, "
+                        f"[{code}] 分析Completed: {result.operation_advice}, "
                         f"评分 {result.sentiment_score}"
                     )
                 
@@ -1154,7 +1154,7 @@ class StockAnalysisPipeline:
             return result
             
         except Exception as e:
-            # 捕获所有异常，确保单股失败不影响整体
+            # 捕获所有异常，确保单股Failed不影响整体
             logger.exception(f"[{code}] 处理过程发生未知异常: {e}")
             return None
     
@@ -1171,17 +1171,17 @@ class StockAnalysisPipeline:
         流程：
         1. 获取待分析的股票列表
         2. 使用线程池并发处理
-        3. 收集分析结果
+        3. 收集Analysis result
         4. 发送通知
 
         Args:
-            stock_codes: 股票代码列表（可选，默认使用配置中的自选股）
+            stock_codes: Stock code列表（可选，默认使用配置中的自选股）
             dry_run: 是否仅获取数据不分析
             send_notification: 是否发送推送通知
             merge_notification: 是否合并推送（跳过本次推送，由 main 层合并个股+大盘后统一发送，Issue #190）
 
         Returns:
-            分析结果列表
+            Analysis result列表
         """
         start_time = time.time()
         
@@ -1194,18 +1194,18 @@ class StockAnalysisPipeline:
             logger.error("未配置自选股列表，请在 .env 文件中设置 STOCK_LIST")
             return []
         
-        logger.info(f"===== 开始分析 {len(stock_codes)} 只股票 =====")
+        logger.info(f"===== Started分析 {len(stock_codes)} 只股票 =====")
         logger.info(f"股票列表: {', '.join(stock_codes)}")
         logger.info(f"并发数: {self.max_workers}, 模式: {'仅获取数据' if dry_run else '完整分析'}")
         
         # === 批量预取实时行情（优化：避免每只股票都触发全量拉取）===
-        # 只有股票数量 >= 5 时才进行预取，少量股票直接逐个查询更高效
+        # 只有股票数量 >= 5 时才进行预取，少量股票直接逐个Query更高效
         if len(stock_codes) >= 5:
             prefetch_count = self.fetcher_manager.prefetch_realtime_quotes(stock_codes)
             if prefetch_count > 0:
                 logger.info(f"已启用批量预取架构：一次拉取全市场数据，{len(stock_codes)} 只股票共享缓存")
 
-        # Issue #455: 预取股票名称，避免并发分析时显示「股票xxxxx」
+        # Issue #455: 预取Stock name，避免并发分析时显示「股票xxxxx」
         # dry_run 仅做数据拉取，不需要名称预取，避免额外网络开销
         if not dry_run:
             self.fetcher_manager.prefetch_stock_names(stock_codes, use_bulk=False)
@@ -1271,12 +1271,12 @@ class StockAnalysisPipeline:
                         time.sleep(analysis_delay)
 
                 except Exception as e:
-                    logger.error(f"[{code}] 任务执行失败: {e}")
+                    logger.error(f"[{code}] 任务Execution failed: {e}")
         
         # 统计
         elapsed_time = time.time() - start_time
         
-        # dry-run 模式下，数据获取成功即视为成功
+        # dry-run 模式下，数据获取Succeeded即视为Succeeded
         if dry_run:
             # 检查哪些股票的数据今天已存在
             success_count = sum(1 for code in stock_codes if self.db.has_today_data(code))
@@ -1285,8 +1285,8 @@ class StockAnalysisPipeline:
             success_count = len(results)
             fail_count = len(stock_codes) - success_count
         
-        logger.info("===== 分析完成 =====")
-        logger.info(f"成功: {success_count}, 失败: {fail_count}, 耗时: {elapsed_time:.2f} 秒")
+        logger.info("===== 分析Completed =====")
+        logger.info(f"Succeeded: {success_count}, Failed: {fail_count}, 耗时: {elapsed_time:.2f} 秒")
         
         # 保存报告到本地文件（无论是否推送通知都保存）
         if results and not dry_run:
@@ -1300,7 +1300,7 @@ class StockAnalysisPipeline:
                 self._send_notifications(results, report_type, skip_push=True)
             elif merge_notification:
                 # 合并模式（Issue #190）：仅保存，不推送，由 main 层合并个股+大盘后统一发送
-                logger.info("合并推送模式：跳过本次推送，将在个股+大盘复盘后统一发送")
+                logger.info("合并推送模式：跳过本次推送，将在个股+Market review后统一发送")
                 self._send_notifications(results, report_type, skip_push=True)
             else:
                 self._send_notifications(results, report_type)
@@ -1356,7 +1356,7 @@ class StockAnalysisPipeline:
             filepath = self.notifier.save_report_to_file(report)
             logger.info(f"决策仪表盘日报已保存: {filepath}")
         except Exception as e:
-            logger.error(f"保存本地报告失败: {e}")
+            logger.error(f"保存本地报告Failed: {e}")
 
     def _send_notifications(
         self,
@@ -1365,12 +1365,12 @@ class StockAnalysisPipeline:
         skip_push: bool = False,
     ) -> None:
         """
-        发送分析结果通知
+        发送Analysis result通知
         
         生成决策仪表盘格式的报告
         
         Args:
-            results: 分析结果列表
+            results: Analysis result列表
             skip_push: 是否跳过推送（仅保存到本地，用于单股推送模式）
         """
         try:
@@ -1419,7 +1419,7 @@ class StockAnalysisPipeline:
                         )
                     else:
                         logger.warning(
-                            "Markdown 转图片失败，将回退为文本发送。请检查 MARKDOWN_TO_IMAGE_CHANNELS 配置并安装 %s",
+                            "Markdown 转图片Failed，将回退为文本发送。请检查 MARKDOWN_TO_IMAGE_CHANNELS 配置并安装 %s",
                             _get_md2img_hint(),
                         )
 
@@ -1440,7 +1440,7 @@ class StockAnalysisPipeline:
                         )
                         if wechat_image_bytes is None:
                             logger.warning(
-                                "企业微信 Markdown 转图片失败，将回退为文本发送。请检查 MARKDOWN_TO_IMAGE_CHANNELS 配置并安装 %s",
+                                "企业微信 Markdown 转图片Failed，将回退为文本发送。请检查 MARKDOWN_TO_IMAGE_CHANNELS 配置并安装 %s",
                                 _get_md2img_hint(),
                             )
                     use_image = self.notifier._should_use_image_for_channel(
@@ -1550,15 +1550,15 @@ class StockAnalysisPipeline:
 
                 success = wechat_success or non_wechat_success or context_success
                 if success:
-                    logger.info("决策仪表盘推送成功")
+                    logger.info("决策仪表盘推送Succeeded")
                 else:
-                    logger.warning("决策仪表盘推送失败")
+                    logger.warning("决策仪表盘推送Failed")
             else:
                 logger.info("通知渠道未配置，跳过推送")
                 
         except Exception as e:
             import traceback
-            logger.error(f"发送通知失败: {e}\n{traceback.format_exc()}")
+            logger.error(f"发送通知Failed: {e}\n{traceback.format_exc()}")
 
     def _generate_aggregate_report(
         self,

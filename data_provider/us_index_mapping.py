@@ -1,14 +1,14 @@
 # -*- coding: utf-8 -*-
 """
 ===================================
-美股指数与股票代码工具
+美股指数与Stock code工具
 ===================================
 
 提供：
 1. 美股指数代码映射（如 SPX -> ^GSPC）
-2. 美股股票代码识别（AAPL、TSLA 等）
+2. 美股Stock code识别（AAPL、TSLA 等）
 
-美股指数在 Yahoo Finance 中需使用 ^ 前缀，与股票代码不同。
+美股指数在 Yahoo Finance 中需使用 ^ 前缀，与Stock code不同。
 """
 
 import re
@@ -66,11 +66,11 @@ def is_us_stock_code(code: str) -> bool:
     """
     判断代码是否为美股股票符号（排除美股指数）。
 
-    美股股票代码为 1-5 个大写字母，可选 .X 后缀如 BRK.B。
+    美股Stock code为 1-5 个大写字母，可选 .X 后缀如 BRK.B。
     美股指数（SPX、DJI 等）明确排除。
 
     Args:
-        code: 股票代码，如 'AAPL', 'TSLA', 'BRK.B'
+        code: Stock code，如 'AAPL', 'TSLA', 'BRK.B'
 
     Returns:
         True 表示是美股股票符号，否则 False
@@ -102,7 +102,7 @@ def get_us_index_yf_symbol(code: str) -> tuple:
         code: 用户输入，如 'SPX', '^GSPC', 'DJI'
 
     Returns:
-        (yf_symbol, chinese_name) 元组，未找到时返回 (None, None)。
+        (yf_symbol, chinese_name) 元组，Not found时返回 (None, None)。
 
     Examples:
         >>> get_us_index_yf_symbol('SPX')

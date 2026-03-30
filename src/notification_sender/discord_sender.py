@@ -2,7 +2,7 @@
 """
 Discord 发送提醒服务
 
-职责：
+Responsibilities:
 1. 通过 webhook 或 Discord bot API 发送 Discord 消息
 """
 import logging
@@ -47,13 +47,13 @@ class DiscordSender:
             content: Markdown 格式的消息内容
             
         Returns:
-            是否发送成功
+            是否发送Succeeded
         """
         # 分割内容，避免单条消息超过 Discord 限制
         try:
             chunks = chunk_content_by_max_words(content, self._discord_max_words)
         except ValueError as e:
-            logger.error(f"分割 Discord 消息失败: {e}, 尝试整段发送。")
+            logger.error(f"分割 Discord 消息Failed: {e}, 尝试整段发送。")
             chunks = [content]
 
         # 优先使用 Webhook（配置简单，权限低）
@@ -78,7 +78,7 @@ class DiscordSender:
             content: Markdown 格式的消息内容
             
         Returns:
-            是否发送成功
+            是否发送Succeeded
         """
         try:
             payload = {
@@ -95,10 +95,10 @@ class DiscordSender:
             )
             
             if response.status_code in [200, 204]:
-                logger.info("Discord Webhook 消息发送成功")
+                logger.info("Discord Webhook 消息发送Succeeded")
                 return True
             else:
-                logger.error(f"Discord Webhook 发送失败: {response.status_code} {response.text}")
+                logger.error(f"Discord Webhook 发送Failed: {response.status_code} {response.text}")
                 return False
         except Exception as e:
             logger.error(f"Discord Webhook 发送异常: {e}")
@@ -112,7 +112,7 @@ class DiscordSender:
             content: Markdown 格式的消息内容
             
         Returns:
-            是否发送成功
+            是否发送Succeeded
         """
         try:
             headers = {
@@ -128,10 +128,10 @@ class DiscordSender:
             response = requests.post(url, json=payload, headers=headers, timeout=10)
             
             if response.status_code == 200:
-                logger.info("Discord Bot 消息发送成功")
+                logger.info("Discord Bot 消息发送Succeeded")
                 return True
             else:
-                logger.error(f"Discord Bot 发送失败: {response.status_code} {response.text}")
+                logger.error(f"Discord Bot 发送Failed: {response.status_code} {response.text}")
                 return False
         except Exception as e:
             logger.error(f"Discord Bot 发送异常: {e}")

@@ -32,7 +32,7 @@ def main() -> int:
     port = int(os.getenv("WEBUI_PORT", os.getenv("API_PORT", "8000")))
 
     print(f"正在启动 Web 服务: http://{host}:{port}")
-    print(f"API 文档: http://{host}:{port}/docs")
+    print(f"API documentation: http://{host}:{port}/docs")
     print()
 
     try:

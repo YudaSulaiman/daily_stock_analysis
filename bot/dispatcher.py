@@ -83,7 +83,7 @@ class CommandDispatcher:
     """
     命令分发器
 
-    职责：
+    Responsibilities:
     1. 注册和管理命令处理器
     2. 解析消息中的命令和参数
     3. 分发命令到对应处理器
@@ -161,7 +161,7 @@ class CommandDispatcher:
             name: 命令名称
 
         Returns:
-            是否成功注销
+            是否Succeeded注销
         """
         name = name.lower()
 
@@ -181,7 +181,7 @@ class CommandDispatcher:
         """
         获取命令
 
-        支持命令名和别名查询。
+        支持命令名和别名Query。
 
         Args:
             name: 命令名或别名
@@ -256,7 +256,7 @@ class CommandDispatcher:
         if "error" in error_holder:
             raise error_holder["error"]
 
-        return result_holder.get("response", BotResponse.error_response("命令执行失败"))
+        return result_holder.get("response", BotResponse.error_response("命令Execution failed"))
 
     def _prepare_dispatch(self, message: BotMessage) -> tuple[Optional[str], List[str], Optional[BotCommand], Optional[BotResponse]]:
         """Run shared dispatch pre-checks for sync/async entrypoints."""
@@ -308,16 +308,16 @@ class CommandDispatcher:
             return BotResponse.text_response("")
 
         if command is None:
-            return BotResponse.error_response("命令执行失败")
+            return BotResponse.error_response("命令Execution failed")
 
         try:
             response = command.execute(message, args)
-            logger.info(f"[Dispatcher] 命令 {cmd_name} 执行成功")
+            logger.info(f"[Dispatcher] 命令 {cmd_name} 执行Succeeded")
             return response
         except Exception as e:
-            logger.error(f"[Dispatcher] 命令 {cmd_name} 执行失败: {e}")
+            logger.error(f"[Dispatcher] 命令 {cmd_name} Execution failed: {e}")
             logger.exception(e)
-            return BotResponse.error_response(f"命令执行失败: {str(e)[:100]}")
+            return BotResponse.error_response(f"命令Execution failed: {str(e)[:100]}")
 
     async def dispatch_async(self, message: BotMessage) -> BotResponse:
         """
@@ -327,7 +327,7 @@ class CommandDispatcher:
             message: 消息对象
 
         Returns:
-            响应对象
+            Response object
         """
         cmd_name, args, command, early_response = self._prepare_dispatch(message)
         if early_response is not None:
@@ -348,17 +348,17 @@ class CommandDispatcher:
             return BotResponse.text_response("")
 
         if command is None:
-            return BotResponse.error_response("命令执行失败")
+            return BotResponse.error_response("命令Execution failed")
 
         # 6. 执行命令
         try:
             response = await command.execute_async(message, args)
-            logger.info(f"[Dispatcher] 命令 {cmd_name} 执行成功")
+            logger.info(f"[Dispatcher] 命令 {cmd_name} 执行Succeeded")
             return response
         except Exception as e:
-            logger.error(f"[Dispatcher] 命令 {cmd_name} 执行失败: {e}")
+            logger.error(f"[Dispatcher] 命令 {cmd_name} Execution failed: {e}")
             logger.exception(e)
-            return BotResponse.error_response(f"命令执行失败: {str(e)[:100]}")
+            return BotResponse.error_response(f"命令Execution failed: {str(e)[:100]}")
 
     def set_help_command_getter(self, getter: Callable) -> None:
         """
@@ -753,7 +753,7 @@ def get_dispatcher() -> CommandDispatcher:
         for command_class in ALL_COMMANDS:
             _dispatcher.register_class(command_class)
 
-        logger.info(f"[Dispatcher] 初始化完成，已注册 {len(_dispatcher._commands)} 个命令")
+        logger.info(f"[Dispatcher] 初始化Completed，已注册 {len(_dispatcher._commands)} 个命令")
 
     return _dispatcher
 

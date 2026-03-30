@@ -62,10 +62,10 @@ def handle_webhook(
         platform_name: 平台名称 (feishu, dingtalk, wecom, telegram)
         headers: HTTP 请求头
         body: 请求体原始字节
-        query_params: URL 查询参数（用于某些平台的验证）
+        query_params: URL Query参数（用于某些平台的验证）
 
     Returns:
-        WebhookResponse 响应对象
+        WebhookResponse Response object
     """
     logger.info(f"[BotHandler] 收到 {platform_name} Webhook 请求")
 
@@ -86,7 +86,7 @@ def handle_webhook(
     try:
         data = json.loads(body.decode('utf-8')) if body else {}
     except json.JSONDecodeError as e:
-        logger.error(f"[BotHandler] JSON 解析失败: {e}")
+        logger.error(f"[BotHandler] JSON 解析Failed: {e}")
         return WebhookResponse.error("Invalid JSON", 400)
 
     logger.debug(f"[BotHandler] 请求数据: {json.dumps(data, ensure_ascii=False)[:500]}")
@@ -145,7 +145,7 @@ async def handle_webhook_async(
     try:
         data = json.loads(body.decode('utf-8')) if body else {}
     except json.JSONDecodeError as e:
-        logger.error(f"[BotHandler] JSON 解析失败: {e}")
+        logger.error(f"[BotHandler] JSON 解析Failed: {e}")
         return WebhookResponse.error("Invalid JSON", 400)
 
     logger.debug(f"[BotHandler] 请求数据: {json.dumps(data, ensure_ascii=False)[:500]}")

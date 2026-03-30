@@ -1,10 +1,10 @@
 # -*- coding: utf-8 -*-
 """
 ===================================
-大盘复盘命令
+Market review命令
 ===================================
 
-执行大盘复盘分析，生成市场概览报告。
+执行Market review分析，生成市场概览报告。
 """
 
 import logging
@@ -19,16 +19,16 @@ logger = logging.getLogger(__name__)
 
 class MarketCommand(BotCommand):
     """
-    大盘复盘命令
+    Market review命令
     
-    执行大盘复盘分析，包括：
+    执行Market review分析，包括：
     - 主要指数表现
     - 板块热点
     - 市场情绪
     - 后市展望
     
     用法：
-        /market - 执行大盘复盘
+        /market - 执行Market review
     """
 
     @property
@@ -41,15 +41,15 @@ class MarketCommand(BotCommand):
 
     @property
     def description(self) -> str:
-        return "大盘复盘分析"
+        return "Market review分析"
 
     @property
     def usage(self) -> str:
         return "/market"
 
     def execute(self, message: BotMessage, args: List[str]) -> BotResponse:
-        """执行大盘复盘命令"""
-        logger.info(f"[MarketCommand] 开始大盘复盘分析")
+        """执行Market review命令"""
+        logger.info(f"[MarketCommand] StartedMarket review分析")
 
         # 在后台线程中执行复盘（避免阻塞）
         thread = threading.Thread(
@@ -60,17 +60,17 @@ class MarketCommand(BotCommand):
         thread.start()
 
         return BotResponse.markdown_response(
-            "✅ **大盘复盘任务已启动**\n\n"
+            "✅ **Market review任务已启动**\n\n"
             "正在分析：\n"
             "• 主要指数表现\n"
             "• 板块热点分析\n"
             "• 市场情绪判断\n"
             "• 后市展望\n\n"
-            "分析完成后将自动推送结果。"
+            "分析Completed后将自动推送结果。"
         )
 
     def _run_market_review(self, message: BotMessage) -> None:
-        """后台执行大盘复盘"""
+        """后台执行Market review"""
         try:
             from src.config import get_config
             from src.notification import NotificationService
@@ -114,12 +114,12 @@ class MarketCommand(BotCommand):
 
             if review_report:
                 # 推送结果
-                report_content = f"🎯 **大盘复盘**\n\n{review_report}"
+                report_content = f"🎯 **Market review**\n\n{review_report}"
                 notifier.send(report_content, email_send_to_all=True)
-                logger.info("[MarketCommand] 大盘复盘完成并已推送")
+                logger.info("[MarketCommand] Market reviewCompleted并已推送")
             else:
-                logger.warning("[MarketCommand] 大盘复盘返回空结果")
+                logger.warning("[MarketCommand] Market review返回空结果")
 
         except Exception as e:
-            logger.error(f"[MarketCommand] 大盘复盘失败: {e}")
+            logger.error(f"[MarketCommand] Market reviewFailed: {e}")
             logger.exception(e)

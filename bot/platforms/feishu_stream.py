@@ -97,7 +97,7 @@ class FeishuReplyClient:
             user_id: 用户 open_id（at_user=True 时需要）
 
         Returns:
-            是否发送成功
+            是否发送Succeeded
         """
         try:
             # 如果需要 @用户，在内容前添加 @ 标记
@@ -149,12 +149,12 @@ class FeishuReplyClient:
 
             if not response.success():
                 logger.error(
-                    f"[Feishu Stream] 发送交互卡片失败: code={response.code}, "
+                    f"[Feishu Stream] 发送交互卡片Failed: code={response.code}, "
                     f"msg={response.msg}, log_id={response.get_log_id()}"
                 )
                 return False
 
-            logger.debug("[Feishu Stream] 发送交互卡片成功")
+            logger.debug("[Feishu Stream] 发送交互卡片Succeeded")
             return True
 
         except Exception as e:
@@ -173,7 +173,7 @@ class FeishuReplyClient:
             user_id: 用户 open_id（at_user=True 时需要）
 
         Returns:
-            是否发送成功
+            是否发送Succeeded
         """
         # 将文本转换为飞书 Markdown 格式
         formatted_text = format_feishu_markdown(text)
@@ -210,7 +210,7 @@ class FeishuReplyClient:
             receive_id_type: 接收者 ID 类型，默认 chat_id
 
         Returns:
-            是否发送成功
+            是否发送Succeeded
         """
         # 将文本转换为飞书 Markdown 格式
         formatted_text = format_feishu_markdown(text)
@@ -239,10 +239,10 @@ class FeishuReplyClient:
 
         Args:
             content: 消息文本
-            send_func: 发送单个分片的函数，返回是否发送成功
+            send_func: 发送单个分片的函数，返回是否发送Succeeded
 
         Returns:
-            是否全部发送成功
+            是否全部发送Succeeded
         """
         chunks = chunk_content_by_max_bytes(content, self._max_bytes, add_page_marker=True)
         success_count = 0
@@ -250,7 +250,7 @@ class FeishuReplyClient:
             if send_func(chunk):
                 success_count += 1
             else:
-                logger.error(f"[Feishu Stream] 发送消息失败: {chunk}")
+                logger.error(f"[Feishu Stream] 发送消息Failed: {chunk}")
             if i < len(chunks) - 1:
                 time.sleep(1)
         return success_count == len(chunks)
@@ -344,7 +344,7 @@ class FeishuStreamHandler:
                     user_id=bot_message.user_id if response.at_user else None,
                 )
         except Exception as e:
-            self._logger.error(f"[Feishu Stream] 异步处理消息失败: {e}")
+            self._logger.error(f"[Feishu Stream] 异步处理消息Failed: {e}")
             self._logger.exception(e)
 
     @staticmethod
@@ -388,7 +388,7 @@ class FeishuStreamHandler:
             self._enqueue_message(bot_message)
 
         except Exception as e:
-            self._logger.error(f"[Feishu Stream] 处理消息失败: {e}")
+            self._logger.error(f"[Feishu Stream] 处理消息Failed: {e}")
             self._logger.exception(e)
 
     def _parse_event_message(self, event: 'P2ImMessageReceiveV1') -> Optional[BotMessage]:
@@ -484,7 +484,7 @@ class FeishuStreamHandler:
             )
 
         except Exception as e:
-            self._logger.error(f"[Feishu Stream] 解析消息失败: {e}")
+            self._logger.error(f"[Feishu Stream] 解析消息Failed: {e}")
             return None
 
     def _extract_command(self, text: str, mentions: list) -> str:
@@ -527,7 +527,7 @@ class FeishuStreamClient:
 
     封装 lark-oapi SDK 的 WebSocket 客户端，提供简单的启动接口。
 
-    使用方式：
+    Usage:
         client = FeishuStreamClient()
         client.start()  # 阻塞运行
 
@@ -703,7 +703,7 @@ def start_feishu_stream_background() -> bool:
     在后台启动飞书 Stream 客户端
 
     Returns:
-        是否成功启动
+        是否Succeeded启动
     """
     client = get_feishu_stream_client()
     if client:

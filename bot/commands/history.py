@@ -71,7 +71,7 @@ class HistoryCommand(BotCommand):
             db = get_db()
         except Exception as e:
             logger.error(f"History: storage unavailable: {e}")
-            return BotResponse.text_response("⚠️ 存储模块不可用，无法查询对话历史。")
+            return BotResponse.text_response("⚠️ 存储模块不可用，无法Query对话历史。")
 
         prefix = _user_prefix(message)
         legacy_chat_session_id = _legacy_chat_session_id(message)
@@ -88,7 +88,7 @@ class HistoryCommand(BotCommand):
                 )
             except Exception as e:
                 logger.error(f"History clear failed: {e}")
-                return BotResponse.text_response(f"⚠️ 清除失败: {str(e)}")
+                return BotResponse.text_response(f"⚠️ 清除Failed: {str(e)}")
 
         # /history <session_id> — show messages for a specific session
         # Only allow access if the session belongs to the requesting user.
@@ -115,7 +115,7 @@ class HistoryCommand(BotCommand):
                 return BotResponse.markdown_response("\n".join(lines))
             except Exception as e:
                 logger.error(f"History detail failed: {e}")
-                return BotResponse.text_response(f"⚠️ 获取会话详情失败: {str(e)}")
+                return BotResponse.text_response(f"⚠️ 获取会话详情Failed: {str(e)}")
 
         # /history [count] — list recent sessions for this user only
         limit = 10
@@ -147,4 +147,4 @@ class HistoryCommand(BotCommand):
 
         except Exception as e:
             logger.error(f"History list failed: {e}")
-            return BotResponse.text_response(f"⚠️ 获取会话列表失败: {str(e)}")
+            return BotResponse.text_response(f"⚠️ 获取会话列表Failed: {str(e)}")

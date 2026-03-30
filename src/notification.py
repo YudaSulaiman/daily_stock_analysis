@@ -1,11 +1,11 @@
 # -*- coding: utf-8 -*-
 """
 ===================================
-A股自选股智能分析系统 - 通知层
+A-share Stock Intelligent Analysis System - 通知层
 ===================================
 
-职责：
-1. 汇总分析结果生成日报
+Responsibilities:
+1. 汇总Analysis result生成日报
 2. 支持 Markdown 格式输出
 3. 多渠道推送（自动识别）：
    - 企业微信 Webhook
@@ -110,7 +110,7 @@ class NotificationService(
     """
     通知服务
     
-    职责：
+    Responsibilities:
     1. 生成 Markdown 格式的分析日报
     2. 向所有已配置的渠道推送消息（多渠道并发）
     3. 支持本地保存日报
@@ -143,7 +143,7 @@ class NotificationService(
             config, 'markdown_to_image_max_chars', 15000
         )
 
-        # 仅分析结果摘要（Issue #262）：true 时只推送汇总，不含个股详情
+        # 仅Analysis Results Summary（Issue #262）：true 时只推送汇总，不含个股详情
         self._report_summary_only = getattr(config, 'report_summary_only', False)
         self._history_compare_cache: Dict[Tuple[int, Tuple[Tuple[str, str], ...]], Dict[str, List[Dict[str, Any]]]] = {}
 
@@ -166,7 +166,7 @@ class NotificationService(
             self._context_channels.append("钉钉会话")
 
         if not self._available_channels and not self._context_channels:
-            logger.warning("未配置有效的通知渠道，将不发送推送通知")
+            logger.warning("未配置有效的通知渠道，将Do not send push notifications")
         else:
             channel_names = [ChannelDetector.get_channel_name(ch) for ch in self._available_channels]
             channel_names.extend(self._context_channels)
@@ -389,7 +389,7 @@ class NotificationService(
                     logger.info("已通过钉钉会话（Stream）推送报告")
                     success = True
                 else:
-                    logger.error("钉钉会话（Stream）推送失败")
+                    logger.error("钉钉会话（Stream）推送Failed")
             except Exception as e:
                 logger.error(f"钉钉会话（Stream）推送异常: {e}")
 
@@ -401,7 +401,7 @@ class NotificationService(
                     logger.info("已通过飞书会话（Stream）推送报告")
                     success = True
                 else:
-                    logger.error("飞书会话（Stream）推送失败")
+                    logger.error("飞书会话（Stream）推送Failed")
             except Exception as e:
                 logger.error(f"飞书会话（Stream）推送异常: {e}")
 
@@ -416,7 +416,7 @@ class NotificationService(
             content: 消息内容
             
         Returns:
-            是否发送成功
+            是否发送Succeeded
         """
         try:
             from bot.platforms.feishu_stream import FeishuReplyClient, FEISHU_SDK_AVAILABLE
@@ -447,7 +447,7 @@ class NotificationService(
             return reply_client.send_to_chat(chat_id, content)
             
         except ImportError as e:
-            logger.error(f"导入飞书 Stream 模块失败: {e}")
+            logger.error(f"导入飞书 Stream 模块Failed: {e}")
             return False
         except Exception as e:
             logger.error(f"飞书 Stream 回复异常: {e}")
@@ -470,7 +470,7 @@ class NotificationService(
             max_bytes: 单条消息最大字节数
             
         Returns:
-            是否全部发送成功
+            是否全部发送Succeeded
         """
         import time
         
@@ -518,7 +518,7 @@ class NotificationService(
             
             if not reply_client.send_to_chat(chat_id, chunk):
                 success = False
-                logger.error(f"飞书 Stream 分块 {i+1}/{len(chunks)} 发送失败")
+                logger.error(f"飞书 Stream 分块 {i+1}/{len(chunks)} 发送Failed")
         
         return success
         
@@ -531,7 +531,7 @@ class NotificationService(
         生成 Markdown 格式的日报（详细版）
 
         Args:
-            results: 分析结果列表
+            results: Analysis result列表
             report_date: 报告日期（默认今天）
 
         Returns:
@@ -777,7 +777,7 @@ class NotificationService(
         格式：市场概览 + 重要信息 + 核心结论 + 数据透视 + 作战计划
 
         Args:
-            results: 分析结果列表
+            results: Analysis result列表
             report_date: 报告日期（默认今天）
 
         Returns:
@@ -826,7 +826,7 @@ class NotificationService(
             "",
         ]
 
-        # === 新增：分析结果摘要 (Issue #112) ===
+        # === 新增：Analysis Results Summary (Issue #112) ===
         if results:
             report_lines.extend([
                 f"## 📊 {labels['summary_heading']}",
@@ -853,7 +853,7 @@ class NotificationService(
                 signal_text, signal_emoji, signal_tag = self._get_signal_level(result)
                 dashboard = result.dashboard if hasattr(result, 'dashboard') and result.dashboard else {}
                 
-                # 股票名称（优先使用 dashboard 或 result 中的名称，转义 *ST 等特殊字符）
+                # Stock name（优先使用 dashboard 或 result 中的名称，转义 *ST 等特殊字符）
                 stock_name = self._get_display_name(result, report_language)
                 
                 report_lines.extend([
@@ -1073,7 +1073,7 @@ class NotificationService(
         只保留核心结论和狙击点位
         
         Args:
-            results: 分析结果列表
+            results: Analysis result列表
             
         Returns:
             精简版决策仪表盘
@@ -1132,10 +1132,10 @@ class NotificationService(
                 battle = dashboard.get('battle_plan', {}) if dashboard else {}
                 intel = dashboard.get('intelligence', {}) if dashboard else {}
                 
-                # 股票名称
+                # Stock name
                 stock_name = self._get_display_name(result, report_language)
                 
-                # 标题行：信号等级 + 股票名称
+                # 标题行：信号等级 + Stock name
                 lines.append(f"### {signal_emoji} **{signal_text}** | {stock_name}({result.code})")
                 lines.append("")
                 
@@ -1236,7 +1236,7 @@ class NotificationService(
         生成企业微信精简版日报（控制在4000字符内）
 
         Args:
-            results: 分析结果列表
+            results: Analysis result列表
 
         Returns:
             精简版 Markdown 内容
@@ -1372,7 +1372,7 @@ class NotificationService(
         格式精简但信息完整，适合每分析完一只股票立即推送
         
         Args:
-            result: 单只股票的分析结果
+            result: 单只股票的Analysis result
             
         Returns:
             Markdown 格式的单股报告
@@ -1386,7 +1386,7 @@ class NotificationService(
         battle = dashboard.get('battle_plan', {}) if dashboard else {}
         intel = dashboard.get('intelligence', {}) if dashboard else {}
         
-        # 股票名称（转义 *ST 等特殊字符）
+        # Stock name（转义 *ST 等特殊字符）
         stock_name = self._get_display_name(result, report_language)
         
         lines = [
@@ -1572,17 +1572,17 @@ class NotificationService(
 
         Args:
             content: 消息内容（Markdown 格式）
-            email_stock_codes: 股票代码列表（可选，用于邮件渠道路由到对应分组邮箱，Issue #268）
-            email_send_to_all: 邮件是否发往所有配置邮箱（用于大盘复盘等无股票归属的内容）
+            email_stock_codes: Stock code列表（可选，用于邮件渠道路由到对应分组邮箱，Issue #268）
+            email_send_to_all: 邮件是否发往所有配置邮箱（用于Market review等无股票归属的内容）
 
         Returns:
-            是否至少有一个渠道发送成功
+            是否至少有一个渠道发送Succeeded
         """
         context_success = self.send_to_context(content)
 
         if not self._available_channels:
             if context_success:
-                logger.info("已通过消息上下文渠道完成推送（无其他通知渠道）")
+                logger.info("已通过消息上下文渠道Completed推送（无其他通知渠道）")
                 return True
             logger.warning("通知服务不可用，跳过推送")
             return False
@@ -1613,7 +1613,7 @@ class NotificationService(
                     else "wkhtmltopdf (apt install wkhtmltopdf / brew install wkhtmltopdf)"
                 )
                 logger.warning(
-                    "Markdown 转图片失败，将回退为文本发送。请检查 MARKDOWN_TO_IMAGE_CHANNELS 配置并安装 %s",
+                    "Markdown 转图片Failed，将回退为文本发送。请检查 MARKDOWN_TO_IMAGE_CHANNELS 配置并安装 %s",
                     hint,
                 )
 
@@ -1685,10 +1685,10 @@ class NotificationService(
                     fail_count += 1
 
             except Exception as e:
-                logger.error(f"{channel_name} 发送失败: {e}")
+                logger.error(f"{channel_name} 发送Failed: {e}")
                 fail_count += 1
 
-        logger.info(f"通知发送完成：成功 {success_count} 个，失败 {fail_count} 个")
+        logger.info(f"通知发送Completed：Succeeded {success_count} 个，Failed {fail_count} 个")
         return success_count > 0 or context_success
    
     def save_report_to_file(
@@ -1808,7 +1808,7 @@ if __name__ == "__main__":
     # 测试代码
     logging.basicConfig(level=logging.DEBUG)
     
-    # 模拟分析结果
+    # 模拟Analysis result
     test_results = [
         AnalysisResult(
             code='600519',
@@ -1858,12 +1858,12 @@ if __name__ == "__main__":
     # 保存到文件
     print("\n=== 保存日报 ===")
     filepath = service.save_report_to_file(report)
-    print(f"保存成功: {filepath}")
+    print(f"保存Succeeded: {filepath}")
     
     # 推送测试
     if service.is_available():
         print(f"\n=== 推送测试（{service.get_channel_names()}）===")
         success = service.send(report)
-        print(f"推送结果: {'成功' if success else '失败'}")
+        print(f"推送结果: {'Succeeded' if success else 'Failed'}")
     else:
         print("\n通知渠道未配置，跳过推送测试")

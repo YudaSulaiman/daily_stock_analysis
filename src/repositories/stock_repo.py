@@ -4,9 +4,9 @@
 股票数据访问层
 ===================================
 
-职责：
+Responsibilities:
 1. 封装股票数据的数据库操作
-2. 提供日线数据查询接口
+2. 提供日线数据Query接口
 """
 
 import logging
@@ -42,7 +42,7 @@ class StockRepository:
         获取最近 N 天的数据
         
         Args:
-            code: 股票代码
+            code: Stock code
             days: 获取天数
             
         Returns:
@@ -51,7 +51,7 @@ class StockRepository:
         try:
             return self.db.get_latest_data(code, days)
         except Exception as e:
-            logger.error(f"获取最新数据失败: {e}")
+            logger.error(f"获取最新数据Failed: {e}")
             return []
     
     def get_range(
@@ -64,9 +64,9 @@ class StockRepository:
         获取指定日期范围的数据
         
         Args:
-            code: 股票代码
-            start_date: 开始日期
-            end_date: 结束日期
+            code: Stock code
+            start_date: Start date
+            end_date: End date
             
         Returns:
             StockDaily 对象列表
@@ -74,7 +74,7 @@ class StockRepository:
         try:
             return self.db.get_data_range(code, start_date, end_date)
         except Exception as e:
-            logger.error(f"获取日期范围数据失败: {e}")
+            logger.error(f"获取日期范围数据Failed: {e}")
             return []
     
     def save_dataframe(
@@ -88,7 +88,7 @@ class StockRepository:
         
         Args:
             df: 包含日线数据的 DataFrame
-            code: 股票代码
+            code: Stock code
             data_source: 数据来源
             
         Returns:
@@ -97,7 +97,7 @@ class StockRepository:
         try:
             return self.db.save_daily_data(df, code, data_source)
         except Exception as e:
-            logger.error(f"保存日线数据失败: {e}")
+            logger.error(f"保存日线数据Failed: {e}")
             return 0
     
     def has_today_data(self, code: str, target_date: Optional[date] = None) -> bool:
@@ -105,7 +105,7 @@ class StockRepository:
         检查是否有指定日期的数据
         
         Args:
-            code: 股票代码
+            code: Stock code
             target_date: 目标日期（默认今天）
             
         Returns:
@@ -114,7 +114,7 @@ class StockRepository:
         try:
             return self.db.has_today_data(code, target_date)
         except Exception as e:
-            logger.error(f"检查数据存在失败: {e}")
+            logger.error(f"检查数据存在Failed: {e}")
             return False
     
     def get_analysis_context(
@@ -126,7 +126,7 @@ class StockRepository:
         获取分析上下文
         
         Args:
-            code: 股票代码
+            code: Stock code
             target_date: 目标日期
             
         Returns:
@@ -135,7 +135,7 @@ class StockRepository:
         try:
             return self.db.get_analysis_context(code, target_date)
         except Exception as e:
-            logger.error(f"获取分析上下文失败: {e}")
+            logger.error(f"获取分析上下文Failed: {e}")
             return None
 
     def get_start_daily(self, *, code: str, analysis_date: date) -> Optional[StockDaily]:

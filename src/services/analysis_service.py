@@ -4,10 +4,10 @@
 分析服务层
 ===================================
 
-职责：
+Responsibilities:
 1. 封装股票分析逻辑
 2. 调用 analyzer 和 pipeline 执行分析
-3. 保存分析结果到数据库
+3. 保存Analysis result到数据库
 """
 
 import logging
@@ -49,16 +49,16 @@ class AnalysisService:
         执行股票分析
         
         Args:
-            stock_code: 股票代码
+            stock_code: Stock code
             report_type: 报告类型 (simple/detailed)
             force_refresh: 是否强制刷新
-            query_id: 查询 ID（可选）
+            query_id: Query ID（可选）
             send_notification: 是否发送通知（API 触发默认发送）
             
         Returns:
-            分析结果字典，包含:
-            - stock_code: 股票代码
-            - stock_name: 股票名称
+            Analysis result字典，包含:
+            - stock_code: Stock code
+            - stock_name: Stock name
             - report: 分析报告
         """
         try:
@@ -93,14 +93,14 @@ class AnalysisService:
             )
             
             if result is None:
-                logger.warning(f"分析股票 {stock_code} 返回空结果")
+                logger.warning(f"Analysis of stock {stock_code} 返回空结果")
                 return None
             
             # 构建响应
             return self._build_analysis_response(result, query_id, report_type=rt.value)
             
         except Exception as e:
-            logger.error(f"分析股票 {stock_code} 失败: {e}", exc_info=True)
+            logger.error(f"Analysis of stock {stock_code} Failed: {e}", exc_info=True)
             return None
     
     def _build_analysis_response(
@@ -114,7 +114,7 @@ class AnalysisService:
         
         Args:
             result: AnalysisResult 对象
-            query_id: 查询 ID
+            query_id: Query ID
             report_type: 归一化后的报告类型
             
         Returns:

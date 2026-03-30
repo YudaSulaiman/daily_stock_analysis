@@ -4,7 +4,7 @@
 股票数据服务层
 ===================================
 
-职责：
+Responsibilities:
 1. 封装股票数据获取逻辑
 2. 提供实时行情和历史数据接口
 """
@@ -34,7 +34,7 @@ class StockService:
         获取股票实时行情
         
         Args:
-            stock_code: 股票代码
+            stock_code: Stock code
             
         Returns:
             实时行情数据字典
@@ -47,7 +47,7 @@ class StockService:
             quote = manager.get_realtime_quote(stock_code)
             
             if quote is None:
-                logger.warning(f"获取 {stock_code} 实时行情失败")
+                logger.warning(f"获取 {stock_code} 实时行情Failed")
                 return None
             
             # UnifiedRealtimeQuote 是 dataclass，使用 getattr 安全访问字段
@@ -79,10 +79,10 @@ class StockService:
             }
             
         except ImportError:
-            logger.warning("DataFetcherManager 未找到，使用占位数据")
+            logger.warning("DataFetcherManager Not found，使用占位数据")
             return self._get_placeholder_quote(stock_code)
         except Exception as e:
-            logger.error(f"获取实时行情失败: {e}", exc_info=True)
+            logger.error(f"获取实时行情Failed: {e}", exc_info=True)
             return None
     
     def get_history_data(
@@ -95,7 +95,7 @@ class StockService:
         获取股票历史行情
         
         Args:
-            stock_code: 股票代码
+            stock_code: Stock code
             period: K 线周期 (daily/weekly/monthly)
             days: 获取天数
             
@@ -120,10 +120,10 @@ class StockService:
             df, source = manager.get_daily_data(stock_code, days=days)
             
             if df is None or df.empty:
-                logger.warning(f"获取 {stock_code} 历史数据失败")
+                logger.warning(f"获取 {stock_code} 历史数据Failed")
                 return {"stock_code": stock_code, "period": period, "data": []}
             
-            # 获取股票名称
+            # 获取Stock name
             stock_name = manager.get_stock_name(stock_code)
             
             # 转换为响应格式
@@ -154,10 +154,10 @@ class StockService:
             }
             
         except ImportError:
-            logger.warning("DataFetcherManager 未找到，返回空数据")
+            logger.warning("DataFetcherManager Not found，返回空数据")
             return {"stock_code": stock_code, "period": period, "data": []}
         except Exception as e:
-            logger.error(f"获取历史数据失败: {e}", exc_info=True)
+            logger.error(f"获取历史数据Failed: {e}", exc_info=True)
             return {"stock_code": stock_code, "period": period, "data": []}
     
     def _get_placeholder_quote(self, stock_code: str) -> Dict[str, Any]:
@@ -165,7 +165,7 @@ class StockService:
         获取占位行情数据（用于测试）
         
         Args:
-            stock_code: 股票代码
+            stock_code: Stock code
             
         Returns:
             占位行情数据

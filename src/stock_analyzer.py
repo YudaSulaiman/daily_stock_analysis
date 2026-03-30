@@ -5,7 +5,7 @@
 ===================================
 
 交易理念核心原则：
-1. 严进策略 - 不追高，追求每笔交易成功率
+1. 严进策略 - 不追高，追求每笔交易Succeeded率
 2. 趋势交易 - MA5>MA10>MA20 多头排列，顺势而为
 3. 效率优先 - 关注筹码结构好的股票
 4. 买点偏好 - 在 MA5/MA10 附近回踩买入
@@ -81,7 +81,7 @@ class RSIStatus(Enum):
 
 @dataclass
 class TrendAnalysisResult:
-    """趋势分析结果"""
+    """趋势Analysis result"""
     code: str
     
     # 趋势判断
@@ -204,20 +204,20 @@ class StockTrendAnalyzer:
     
     def analyze(self, df: pd.DataFrame, code: str) -> TrendAnalysisResult:
         """
-        分析股票趋势
+        Analysis of stock趋势
         
         Args:
             df: 包含 OHLCV 数据的 DataFrame
-            code: 股票代码
+            code: Stock code
             
         Returns:
-            TrendAnalysisResult 分析结果
+            TrendAnalysisResult Analysis result
         """
         result = TrendAnalysisResult(code=code)
         
         if df is None or df.empty or len(df) < 20:
             logger.warning(f"{code} 数据不足，无法进行趋势分析")
-            result.risk_factors.append("数据不足，无法完成分析")
+            result.risk_factors.append("数据不足，无法Completed分析")
             return result
         
         # 确保数据按日期排序
@@ -649,7 +649,7 @@ class StockTrendAnalyzer:
         elif bias > effective_threshold:
             score += 4
             risks.append(
-                f"❌ 乖离率过高({bias:.1f}%>{effective_threshold:.1f}%)，严禁追高！"
+                f"❌ 乖离率过高({bias:.1f}%>{effective_threshold:.1f}%)，Strictly no chasing high prices！"
             )
         elif bias > base_threshold and is_strong_trend:
             score += 10
@@ -659,7 +659,7 @@ class StockTrendAnalyzer:
         else:
             score += 4
             risks.append(
-                f"❌ 乖离率过高({bias:.1f}%>{base_threshold:.1f}%)，严禁追高！"
+                f"❌ 乖离率过高({bias:.1f}%>{base_threshold:.1f}%)，Strictly no chasing high prices！"
             )
 
         # === 量能评分（15分）===
@@ -745,10 +745,10 @@ class StockTrendAnalyzer:
     
     def format_analysis(self, result: TrendAnalysisResult) -> str:
         """
-        格式化分析结果为文本
+        格式化Analysis result为文本
 
         Args:
-            result: 分析结果
+            result: Analysis result
 
         Returns:
             格式化的分析文本
@@ -807,10 +807,10 @@ def analyze_stock(df: pd.DataFrame, code: str) -> TrendAnalysisResult:
     
     Args:
         df: 包含 OHLCV 数据的 DataFrame
-        code: 股票代码
+        code: Stock code
         
     Returns:
-        TrendAnalysisResult 分析结果
+        TrendAnalysisResult Analysis result
     """
     analyzer = StockTrendAnalyzer()
     return analyzer.analyze(df, code)

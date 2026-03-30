@@ -1,10 +1,10 @@
 # -*- coding: utf-8 -*-
 """
 ===================================
-A股自选股智能分析系统 - AI分析层
+A-share Stock Intelligent Analysis System - AI分析层
 ===================================
 
-职责：
+Responsibilities:
 1. 封装 LLM 调用逻辑（通过 LiteLLM 统一调用 Gemini/Anthropic/OpenAI 等）
 2. 结合技术面和消息面生成分析报告
 3. 解析 LLM 响应为结构化 AnalysisResult
@@ -276,7 +276,7 @@ def get_stock_name_multi_source(
     4. 返回默认名称（股票+代码）
 
     Args:
-        stock_code: 股票代码
+        stock_code: Stock code
         context: 分析上下文（可选）
         data_manager: DataFetcherManager 实例（可选）
 
@@ -315,7 +315,7 @@ def get_stock_name_multi_source(
                 STOCK_NAME_MAP[stock_code] = name
                 return name
         except Exception as e:
-            logger.debug(f"从数据源获取股票名称失败: {e}")
+            logger.debug(f"从数据源获取Stock nameFailed: {e}")
 
     # 4. 返回默认名称
     return f'股票{stock_code}'
@@ -324,9 +324,9 @@ def get_stock_name_multi_source(
 @dataclass
 class AnalysisResult:
     """
-    AI 分析结果数据类 - 决策仪表盘版
+    AI Analysis result数据类 - 决策仪表盘版
 
-    封装 Gemini 返回的分析结果，包含决策仪表盘和详细分析
+    封装 Gemini 返回的Analysis result，包含决策仪表盘和详细分析
     """
     code: str
     name: str
@@ -484,12 +484,12 @@ class GeminiAnalyzer:
     """
     Gemini AI 分析器
 
-    职责：
+    Responsibilities:
     1. 调用 Google Gemini API 进行股票分析
     2. 结合预先搜索的新闻和技术面数据生成分析报告
     3. 解析 AI 返回的 JSON 格式结果
 
-    使用方式：
+    Usage:
         analyzer = GeminiAnalyzer()
         result = analyzer.analyze(context, news_context)
     """
@@ -1143,7 +1143,7 @@ class GeminiAnalyzer:
             logger.debug(f"[LLM] 请求前等待 {request_delay:.1f} 秒...")
             time.sleep(request_delay)
         
-        # 优先从上下文获取股票名称（由 main.py 传入）
+        # 优先从上下文获取Stock name（由 main.py 传入）
         name = context.get('stock_name')
         if not name or name.startswith('股票'):
             # 备选：从 realtime 中获取
@@ -1192,7 +1192,7 @@ class GeminiAnalyzer:
                 "max_output_tokens": 8192,
             }
 
-            logger.info(f"[LLM调用] 开始调用 {model_name}...")
+            logger.info(f"[LLM调用] Started调用 {model_name}...")
 
             # 使用 litellm 调用（支持完整性校验重试）
             current_prompt = prompt
@@ -1210,7 +1210,7 @@ class GeminiAnalyzer:
 
                 # 记录响应信息
                 logger.info(
-                    f"[LLM返回] {model_name} 响应成功, 耗时 {elapsed:.2f}s, 响应长度 {len(response_text)} 字符"
+                    f"[LLM返回] {model_name} 响应Succeeded, 耗时 {elapsed:.2f}s, 响应长度 {len(response_text)} 字符"
                 )
                 response_preview = response_text[:300] + "..." if len(response_text) > 300 else response_text
                 logger.info(f"[LLM返回 预览]\n{response_preview}")
@@ -1255,12 +1255,12 @@ class GeminiAnalyzer:
 
             persist_llm_usage(llm_usage, model_used, call_type="analysis", stock_code=code)
 
-            logger.info(f"[LLM解析] {name}({code}) 分析完成: {result.trend_prediction}, 评分 {result.sentiment_score}")
+            logger.info(f"[LLM解析] {name}({code}) 分析Completed: {result.trend_prediction}, 评分 {result.sentiment_score}")
 
             return result
             
         except Exception as e:
-            logger.error(f"AI 分析 {name}({code}) 失败: {e}")
+            logger.error(f"AI 分析 {name}({code}) Failed: {e}")
             return AnalysisResult(
                 code=code,
                 name=name,
@@ -1269,7 +1269,7 @@ class GeminiAnalyzer:
                 operation_advice='Hold' if report_language == "en" else '持有',
                 confidence_level='Low' if report_language == "en" else '低',
                 analysis_summary=(f'Analysis failed: {str(e)[:100]}' if report_language == "en" else f'分析过程出错: {str(e)[:100]}'),
-                risk_warning='Analysis failed. Please retry later or review manually.' if report_language == "en" else '分析失败，请稍后重试或手动分析',
+                risk_warning='Analysis failed. Please retry later or review manually.' if report_language == "en" else 'Analysis failed，请稍后重试或手动分析',
                 success=False,
                 error_message=str(e),
                 model_used=None,
@@ -1290,14 +1290,14 @@ class GeminiAnalyzer:
         
         Args:
             context: 技术面数据上下文（包含增强数据）
-            name: 股票名称（默认值，可能被上下文覆盖）
+            name: Stock name（默认值，可能被上下文覆盖）
             news_context: 预先搜索的新闻内容
         """
         code = context.get('code', 'Unknown')
         report_language = normalize_report_language(report_language)
         _, _, use_legacy_default_prompt = self._get_skill_prompt_sections()
         
-        # 优先使用上下文中的股票名称（从 realtime_quote 获取）
+        # 优先使用上下文中的Stock name（从 realtime_quote 获取）
         stock_name = context.get('stock_name', name)
         if not stock_name or stock_name == f'股票{code}':
             stock_name = STOCK_NAME_MAP.get(code, f'股票{code}')
@@ -1312,8 +1312,8 @@ class GeminiAnalyzer:
 ## 📊 股票基础信息
 | 项目 | 数据 |
 |------|------|
-| 股票代码 | **{code}** |
-| 股票名称 | **{stock_name}** |
+| Stock code | **{code}** |
+| Stock name | **{stock_name}** |
 | 分析日期 | {context.get('date', unknown_text)} |
 
 ---
@@ -1417,11 +1417,11 @@ class GeminiAnalyzer:
 | 筹码状态 | {chip.get('chip_status', unknown_text)} | |
 """
         
-        # 添加趋势分析结果（仅隐式内建 bull_trend 默认回退保留旧口径）
+        # 添加趋势Analysis result（仅隐式内建 bull_trend 默认回退保留旧口径）
         if 'trend_analysis' in context:
             trend = context['trend_analysis']
             if use_legacy_default_prompt:
-                bias_warning = "🚨 超过5%，严禁追高！" if trend.get('bias_ma5', 0) > 5 else "✅ 安全范围"
+                bias_warning = "🚨 超过5%，Strictly no chasing high prices！" if trend.get('bias_ma5', 0) > 5 else "✅ 安全范围"
                 prompt += f"""
 ### 趋势分析预判（基于交易理念）
 | 指标 | 数值 | 判定 |
@@ -1547,16 +1547,16 @@ class GeminiAnalyzer:
 
 """
         prompt += f"""
-### ⚠️ 重要：输出正确的股票名称格式
-正确的股票名称格式为“股票名称（股票代码）”，例如“贵州茅台（600519）”。
-如果上方显示的股票名称为"股票{code}"或不正确，请在分析开头**明确输出该股票的正确中文全称**。
+### ⚠️ 重要：输出正确的Stock name格式
+正确的Stock name格式为“Stock name（Stock code）”，例如“贵州茅台（600519）”。
+如果上方显示的Stock name为"股票{code}"或不正确，请在分析开头**明确输出该股票的正确中文全称**。
 """
         if use_legacy_default_prompt:
             prompt += f"""
 
 ### 重点关注（必须明确回答）：
 1. ❓ 是否满足 MA5>MA10>MA20 多头排列？
-2. ❓ 当前乖离率是否在安全范围内（<5%）？—— 超过5%必须标注"严禁追高"
+2. ❓ 当前乖离率是否在安全范围内（<5%）？—— 超过5%必须标注"Strictly no chasing high prices"
 3. ❓ 量能是否配合（缩量回调/放量突破）？
 4. ❓ 筹码结构是否健康？
 5. ❓ 消息面有无重大利空？（减持、处罚、业绩变脸等）
@@ -1574,7 +1574,7 @@ class GeminiAnalyzer:
         prompt += f"""
 
 ### 决策仪表盘要求：
-- **股票名称**：必须输出正确的中文全称（如"贵州茅台"而非"股票600519"）
+- **Stock name**：必须输出正确的中文全称（如"贵州茅台"而非"股票600519"）
 - **核心结论**：一句话说清该买/该卖/该等
 - **持仓分类建议**：空仓者怎么做 vs 持仓者怎么做
 - **具体狙击点位**：买入价、止损价、目标价（精确到分）
@@ -1768,8 +1768,8 @@ class GeminiAnalyzer:
         """
         解析 Gemini 响应（决策仪表盘版）
         
-        尝试从响应中提取 JSON 格式的分析结果，包含 dashboard 字段
-        如果解析失败，尝试智能提取或返回默认结果
+        尝试从响应中提取 JSON 格式的Analysis result，包含 dashboard 字段
+        如果解析Failed，尝试智能提取或返回默认结果
         """
         try:
             report_language = normalize_report_language(
@@ -1806,7 +1806,7 @@ class GeminiAnalyzer:
                 # 提取 dashboard 数据
                 dashboard = data.get('dashboard', None)
 
-                # 优先使用 AI 返回的股票名称（如果原名称无效或包含代码）
+                # 优先使用 AI 返回的Stock name（如果原名称无效或包含代码）
                 ai_stock_name = data.get('stock_name')
                 if ai_stock_name and (name.startswith('股票') or name == code or 'Unknown' in name):
                     name = ai_stock_name
@@ -1851,7 +1851,7 @@ class GeminiAnalyzer:
                     market_sentiment=data.get('market_sentiment', ''),
                     hot_topics=data.get('hot_topics', ''),
                     # 综合
-                    analysis_summary=data.get('analysis_summary', 'Analysis completed' if report_language == "en" else '分析完成'),
+                    analysis_summary=data.get('analysis_summary', 'Analysis completed' if report_language == "en" else '分析Completed'),
                     key_points=data.get('key_points', ''),
                     risk_warning=data.get('risk_warning', ''),
                     buy_reason=data.get('buy_reason', ''),
@@ -1866,7 +1866,7 @@ class GeminiAnalyzer:
                 return self._parse_text_response(response_text, code, name)
                 
         except json.JSONDecodeError as e:
-            logger.warning(f"JSON 解析失败: {e}，尝试从文本提取")
+            logger.warning(f"JSON 解析Failed: {e}，尝试从文本提取")
             return self._parse_text_response(response_text, code, name)
     
     def _fix_json_string(self, json_str: str) -> str:
@@ -1927,7 +1927,7 @@ class GeminiAnalyzer:
             decision_type = 'hold'
         
         # 截取前500字符作为摘要
-        summary = response_text[:500] if response_text else ('No analysis result' if report_language == "en" else '无分析结果')
+        summary = response_text[:500] if response_text else ('No analysis result' if report_language == "en" else '无Analysis result')
         
         return AnalysisResult(
             code=code,
@@ -1938,8 +1938,8 @@ class GeminiAnalyzer:
             decision_type=decision_type,
             confidence_level='Low' if report_language == "en" else '低',
             analysis_summary=summary,
-            key_points='JSON parsing failed; treat this as best-effort output.' if report_language == "en" else 'JSON解析失败，仅供参考',
-            risk_warning='The result may be inaccurate. Cross-check with other information.' if report_language == "en" else '分析结果可能不准确，建议结合其他信息判断',
+            key_points='JSON parsing failed; treat this as best-effort output.' if report_language == "en" else 'JSON解析Failed，仅供参考',
+            risk_warning='The result may be inaccurate. Cross-check with other information.' if report_language == "en" else 'Analysis result可能不准确，建议结合其他信息判断',
             raw_response=response_text,
             success=True,
             report_language=report_language,
@@ -2012,6 +2012,6 @@ if __name__ == "__main__":
     if analyzer.is_available():
         print("=== AI 分析测试 ===")
         result = analyzer.analyze(test_context)
-        print(f"分析结果: {result.to_dict()}")
+        print(f"Analysis result: {result.to_dict()}")
     else:
         print("Gemini API 未配置，跳过测试")

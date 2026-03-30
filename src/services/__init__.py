@@ -4,10 +4,10 @@
 服务层模块初始化
 ===================================
 
-职责：
+Responsibilities:
 1. 声明可导出的服务类（延迟导入，避免启动时拉入 LLM 等重依赖）
 
-使用方式：
+Usage:
     直接从子模块导入，例如:
     from src.services.history_service import HistoryService
 """

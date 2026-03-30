@@ -1,10 +1,10 @@
 # -*- coding: utf-8 -*-
 """
 ===================================
-A股自选股智能分析系统 - 搜索服务模块
+A-share Stock Intelligent Analysis System - 搜索服务模块
 ===================================
 
-职责：
+Responsibilities:
 1. 提供统一的新闻搜索接口
 2. 支持 Bocha、Tavily、Brave、SerpAPI、SearXNG 多种搜索引擎
 3. 多 Key 负载均衡和故障转移
@@ -133,7 +133,7 @@ class SearchResponse:
     def to_context(self, max_results: int = 5) -> str:
         """将搜索结果转换为可用于 AI 分析的上下文"""
         if not self.success or not self.results:
-            return f"搜索 '{self.query}' 未找到相关结果。"
+            return f"搜索 '{self.query}' Not found相关结果。"
         
         lines = [f"【{self.query} 搜索结果】（来源：{self.provider}）"]
         for i, result in enumerate(self.results[:max_results], 1):
@@ -240,7 +240,7 @@ class BaseSearchProvider(ABC):
             
             if response.success:
                 self._record_success(api_key)
-                logger.info(f"[{self._name}] 搜索 '{query}' 成功，返回 {len(response.results)} 条结果，耗时 {response.search_time:.2f}s")
+                logger.info(f"[{self._name}] 搜索 '{query}' Succeeded，返回 {len(response.results)} 条结果，耗时 {response.search_time:.2f}s")
             else:
                 self._record_error(api_key)
             
@@ -249,7 +249,7 @@ class BaseSearchProvider(ABC):
         except Exception as e:
             self._record_error(api_key)
             elapsed = time.time() - start_time
-            logger.error(f"[{self._name}] 搜索 '{query}' 失败: {e}")
+            logger.error(f"[{self._name}] 搜索 '{query}' Failed: {e}")
             return SearchResponse(
                 query=query,
                 results=[],
@@ -315,7 +315,7 @@ class TavilySearchProvider(BaseSearchProvider):
             )
             
             # 记录原始响应到日志
-            logger.info(f"[Tavily] 搜索完成，query='{query}', 返回 {len(response.get('results', []))} 条结果")
+            logger.info(f"[Tavily] 搜索Completed，query='{query}', 返回 {len(response.get('results', []))} 条结果")
             logger.debug(f"[Tavily] 原始响应: {response}")
             
             # 解析结果
@@ -378,7 +378,7 @@ class TavilySearchProvider(BaseSearchProvider):
 
             if response.success:
                 self._record_success(api_key)
-                logger.info(f"[{self._name}] 搜索 '{query}' 成功，返回 {len(response.results)} 条结果，耗时 {response.search_time:.2f}s")
+                logger.info(f"[{self._name}] 搜索 '{query}' Succeeded，返回 {len(response.results)} 条结果，耗时 {response.search_time:.2f}s")
             else:
                 self._record_error(api_key)
 
@@ -387,7 +387,7 @@ class TavilySearchProvider(BaseSearchProvider):
         except Exception as e:
             self._record_error(api_key)
             elapsed = time.time() - start_time
-            logger.error(f"[{self._name}] 搜索 '{query}' 失败: {e}")
+            logger.error(f"[{self._name}] 搜索 '{query}' Failed: {e}")
             return SearchResponse(
                 query=query,
                 results=[],
@@ -928,13 +928,13 @@ class BochaSearchProvider(BaseSearchProvider):
                 elif response.status_code == 401:
                     error_msg = f"API KEY无效: {error_message}"
                 elif response.status_code == 400:
-                    error_msg = f"请求参数错误: {error_message}"
+                    error_msg = f"Invalid request parameters: {error_message}"
                 elif response.status_code == 429:
                     error_msg = f"请求频率达到限制: {error_message}"
                 else:
                     error_msg = f"HTTP {response.status_code}: {error_message}"
                 
-                logger.warning(f"[Bocha] 搜索失败: {error_msg}")
+                logger.warning(f"[Bocha] 搜索Failed: {error_msg}")
                 
                 return SearchResponse(
                     query=query,
@@ -948,7 +948,7 @@ class BochaSearchProvider(BaseSearchProvider):
             try:
                 data = response.json()
             except ValueError as e:
-                error_msg = f"响应JSON解析失败: {str(e)}"
+                error_msg = f"响应JSON解析Failed: {str(e)}"
                 logger.error(f"[Bocha] {error_msg}")
                 return SearchResponse(
                     query=query,
@@ -970,7 +970,7 @@ class BochaSearchProvider(BaseSearchProvider):
                 )
             
             # 记录原始响应到日志
-            logger.info(f"[Bocha] 搜索完成，query='{query}'")
+            logger.info(f"[Bocha] 搜索Completed，query='{query}'")
             logger.debug(f"[Bocha] 原始响应: {data}")
             
             # 解析搜索结果
@@ -994,7 +994,7 @@ class BochaSearchProvider(BaseSearchProvider):
                     published_date=item.get('datePublished'),  # UTC+8格式，无需转换
                 ))
             
-            logger.info(f"[Bocha] 成功解析 {len(results)} 条结果")
+            logger.info(f"[Bocha] Succeeded解析 {len(results)} 条结果")
             
             return SearchResponse(
                 query=query,
@@ -1014,7 +1014,7 @@ class BochaSearchProvider(BaseSearchProvider):
                 error_message=error_msg
             )
         except requests.exceptions.RequestException as e:
-            error_msg = f"网络请求失败: {str(e)}"
+            error_msg = f"网络请求Failed: {str(e)}"
             logger.error(f"[Bocha] {error_msg}")
             return SearchResponse(
                 query=query,
@@ -1336,7 +1336,7 @@ class BraveSearchProvider(BaseSearchProvider):
             # 检查HTTP状态码
             if response.status_code != 200:
                 error_msg = self._parse_error(response)
-                logger.warning(f"[Brave] 搜索失败: {error_msg}")
+                logger.warning(f"[Brave] 搜索Failed: {error_msg}")
                 return SearchResponse(
                     query=query,
                     results=[],
@@ -1349,7 +1349,7 @@ class BraveSearchProvider(BaseSearchProvider):
             try:
                 data = response.json()
             except ValueError as e:
-                error_msg = f"响应JSON解析失败: {str(e)}"
+                error_msg = f"响应JSON解析Failed: {str(e)}"
                 logger.error(f"[Brave] {error_msg}")
                 return SearchResponse(
                     query=query,
@@ -1359,7 +1359,7 @@ class BraveSearchProvider(BaseSearchProvider):
                     error_message=error_msg
                 )
 
-            logger.info(f"[Brave] 搜索完成，query='{query}'")
+            logger.info(f"[Brave] 搜索Completed，query='{query}'")
             logger.debug(f"[Brave] 原始响应: {data}")
 
             # 解析搜索结果
@@ -1377,7 +1377,7 @@ class BraveSearchProvider(BaseSearchProvider):
                         dt = datetime.fromisoformat(age.replace('Z', '+00:00'))
                         published_date = dt.strftime('%Y-%m-%d')
                     except (ValueError, AttributeError):
-                        published_date = age  # 解析失败时使用原始值
+                        published_date = age  # 解析Failed时使用原始值
 
                 results.append(SearchResult(
                     title=item.get('title', ''),
@@ -1387,7 +1387,7 @@ class BraveSearchProvider(BaseSearchProvider):
                     published_date=published_date
                 ))
 
-            logger.info(f"[Brave] 成功解析 {len(results)} 条结果")
+            logger.info(f"[Brave] Succeeded解析 {len(results)} 条结果")
 
             return SearchResponse(
                 query=query,
@@ -1407,7 +1407,7 @@ class BraveSearchProvider(BaseSearchProvider):
                 error_message=error_msg
             )
         except requests.exceptions.RequestException as e:
-            error_msg = f"网络请求失败: {str(e)}"
+            error_msg = f"网络请求Failed: {str(e)}"
             logger.error(f"[Brave] {error_msg}")
             return SearchResponse(
                 query=query,
@@ -1600,7 +1600,7 @@ class SearXNGSearchProvider(BaseSearchProvider):
                 )
                 if response.status_code != 200:
                     logger.warning(
-                        "[SearXNG] 拉取公共实例列表失败: HTTP %s",
+                        "[SearXNG] 拉取公共实例列表Failed: HTTP %s",
                         response.status_code,
                     )
                 else:
@@ -1612,14 +1612,14 @@ class SearXNGSearchProvider(BaseSearchProvider):
                         return list(urls)
                     logger.warning("[SearXNG] searx.space 未返回可用公共实例，保留已有缓存")
             except Exception as exc:
-                logger.warning("[SearXNG] 拉取公共实例列表失败: %s", exc)
+                logger.warning("[SearXNG] 拉取公共实例列表Failed: %s", exc)
 
             if stale_urls:
                 cls._public_instances_stale_retry_after = (
                     now + cls.PUBLIC_INSTANCES_STALE_REFRESH_BACKOFF_SECONDS
                 )
                 logger.warning(
-                    "[SearXNG] 公共实例刷新失败，继续使用过期缓存，共 %s 个候选实例；"
+                    "[SearXNG] 公共实例刷新Failed，继续使用过期缓存，共 %s 个候选实例；"
                     "%.0fs 内不再刷新",
                     len(stale_urls),
                     cls.PUBLIC_INSTANCES_STALE_REFRESH_BACKOFF_SECONDS,
@@ -1629,7 +1629,7 @@ class SearXNGSearchProvider(BaseSearchProvider):
                 now + cls.PUBLIC_INSTANCES_STALE_REFRESH_BACKOFF_SECONDS
             )
             logger.warning(
-                "[SearXNG] 公共实例冷启动刷新失败，%.0fs 内不再刷新",
+                "[SearXNG] 公共实例冷启动刷新Failed，%.0fs 内不再刷新",
                 cls.PUBLIC_INSTANCES_STALE_REFRESH_BACKOFF_SECONDS,
             )
             return []
@@ -1695,7 +1695,7 @@ class SearXNGSearchProvider(BaseSearchProvider):
                     results=[],
                     provider=self.name,
                     success=False,
-                    error_message="响应JSON解析失败",
+                    error_message="响应JSON解析Failed",
                 )
 
             if not isinstance(data, dict):
@@ -1757,7 +1757,7 @@ class SearXNGSearchProvider(BaseSearchProvider):
                 results=[],
                 provider=self.name,
                 success=False,
-                error_message=f"网络请求失败: {e}",
+                error_message=f"网络请求Failed: {e}",
             )
         except Exception as e:
             return SearchResponse(
@@ -1829,7 +1829,7 @@ class SearXNGSearchProvider(BaseSearchProvider):
             response.search_time = time.time() - start_time
             if response.success:
                 logger.info(
-                    "[%s] 搜索 '%s' 成功，实例=%s，返回 %s 条结果，耗时 %.2fs",
+                    "[%s] 搜索 '%s' Succeeded，实例=%s，返回 %s 条结果，耗时 %.2fs",
                     self.name,
                     query,
                     base_url,
@@ -1839,7 +1839,7 @@ class SearXNGSearchProvider(BaseSearchProvider):
                 return response
 
             errors.append(f"{base_url}: {response.error_message or '未知错误'}")
-            logger.warning("[%s] 实例 %s 搜索失败: %s", self.name, base_url, response.error_message)
+            logger.warning("[%s] 实例 %s 搜索Failed: %s", self.name, base_url, response.error_message)
 
         elapsed = time.time() - start_time
         return SearchResponse(
@@ -1860,7 +1860,7 @@ class SearchService:
     1. 管理多个搜索引擎
     2. 自动故障转移
     3. 结果聚合和格式化
-    4. 数据源失败时的增强搜索（股价、走势等）
+    4. 数据源Failed时的增强搜索（股价、走势等）
     5. 港股/美股自动使用英文搜索关键词
     """
     
@@ -2363,8 +2363,8 @@ class SearchService:
         搜索股票相关新闻
         
         Args:
-            stock_code: 股票代码
-            stock_name: 股票名称
+            stock_code: Stock code
+            stock_name: Stock name
             max_results: 最大返回结果数
             focus_keywords: 重点关注的关键词列表
             
@@ -2376,16 +2376,16 @@ class SearchService:
         search_days = self._effective_news_window_days()
         provider_max_results = self._provider_request_size(max_results)
 
-        # 构建搜索查询（优化搜索效果）
+        # 构建搜索Query（优化搜索效果）
         is_foreign = self._is_foreign_stock(stock_code)
         if focus_keywords:
-            # 如果提供了关键词，直接使用关键词作为查询
+            # 如果提供了关键词，直接使用关键词作为Query
             query = " ".join(focus_keywords)
         elif is_foreign:
             # 港股/美股使用英文搜索关键词
             query = f"{stock_name} {stock_code} stock latest news"
         else:
-            # 默认主查询：股票名称 + 核心关键词
+            # 默认主Query：Stock name + 核心关键词
             query = f"{stock_name} {stock_code} 股票 最新消息"
 
         logger.info(
@@ -2489,8 +2489,8 @@ class SearchService:
         专门针对交易决策相关的重要事件进行搜索
         
         Args:
-            stock_code: 股票代码
-            stock_name: 股票名称
+            stock_code: Stock code
+            stock_name: Stock name
             event_types: 事件类型列表
             
         Returns:
@@ -2502,7 +2502,7 @@ class SearchService:
             else:
                 event_types = ["年报预告", "减持公告", "业绩快报"]
         
-        # 构建针对性查询
+        # 构建针对性Query
         event_query = " OR ".join(event_types)
         query = f"{stock_name} ({event_query})"
         
@@ -2523,7 +2523,7 @@ class SearchService:
             results=[],
             provider="None",
             success=False,
-            error_message="事件搜索失败"
+            error_message="事件搜索Failed"
         )
     
     def search_comprehensive_intel(
@@ -2541,8 +2541,8 @@ class SearchService:
         3. 业绩预期 - 年报预告、业绩快报
         
         Args:
-            stock_code: 股票代码
-            stock_name: 股票名称
+            stock_code: Stock code
+            stock_name: Stock name
             max_searches: 最大搜索次数
             
         Returns:
@@ -2655,7 +2655,7 @@ class SearchService:
 
         logger.info(
             (
-                "开始多维度情报搜索: %s(%s), 时间范围: 近%s天 "
+                "Started多维度情报搜索: %s(%s), 时间范围: 近%s天 "
                 "(profile=%s, NEWS_MAX_AGE_DAYS=%s), 目标条数=%s, provider请求条数=%s"
             ),
             stock_name,
@@ -2720,7 +2720,7 @@ class SearchService:
                     len(filtered_response.results),
                 )
             else:
-                logger.warning(f"[情报搜索] {dim['desc']}: 搜索失败 - {response.error_message}")
+                logger.warning(f"[情报搜索] {dim['desc']}: 搜索Failed - {response.error_message}")
             
             # 短暂延迟避免请求过快
             time.sleep(0.5)
@@ -2733,7 +2733,7 @@ class SearchService:
         
         Args:
             intel_results: 多维度搜索结果
-            stock_name: 股票名称
+            stock_name: Stock name
             
         Returns:
             格式化的情报报告文本
@@ -2767,7 +2767,7 @@ class SearchService:
                     snippet = r.snippet[:150] if len(r.snippet) > 20 else r.snippet
                     lines.append(f"     {snippet}...")
             else:
-                lines.append("  未找到相关信息")
+                lines.append("  Not found相关信息")
         
         return "\n".join(lines)
     
@@ -2839,7 +2839,7 @@ class SearchService:
                 error_message="未配置搜索能力"
             )
         
-        logger.info(f"[增强搜索] 数据源失败，启动增强搜索: {stock_name}({stock_code})")
+        logger.info(f"[增强搜索] 数据源Failed，启动增强搜索: {stock_name}({stock_code})")
         
         all_results = []
         seen_urls = set()
@@ -2872,9 +2872,9 @@ class SearchService:
                             successful_providers.append(provider.name)
                         
                         logger.info(f"[增强搜索] {provider.name} 返回 {len(response.results)} 条结果")
-                        break  # 成功后跳到下一个关键词
+                        break  # Succeeded后跳到下一个关键词
                     else:
-                        logger.debug(f"[增强搜索] {provider.name} 无结果或失败")
+                        logger.debug(f"[增强搜索] {provider.name} 无结果或Failed")
                         
                 except Exception as e:
                     logger.warning(f"[增强搜索] {provider.name} 搜索异常: {e}")
@@ -2890,7 +2890,7 @@ class SearchService:
             final_results = all_results[:max_results]
             provider_str = ", ".join(successful_providers) if successful_providers else "None"
             
-            logger.info(f"[增强搜索] 完成，共获取 {len(final_results)} 条结果（来源: {provider_str}）")
+            logger.info(f"[增强搜索] Completed，共获取 {len(final_results)} 条结果（来源: {provider_str}）")
             
             return SearchResponse(
                 query=f"{stock_name}({stock_code}) 股价走势",
@@ -2905,7 +2905,7 @@ class SearchService:
                 results=[],
                 provider="None",
                 success=False,
-                error_message="增强搜索未找到相关信息"
+                error_message="增强搜索Not found相关信息"
             )
 
     def search_stock_with_enhanced_fallback(
@@ -2920,11 +2920,11 @@ class SearchService:
         综合搜索接口（支持新闻和股价信息）
         
         当 include_price=True 时，会同时搜索新闻和股价信息。
-        主要用于数据源完全失败时的兜底方案。
+        主要用于数据源完全Failed时的兜底方案。
         
         Args:
-            stock_code: 股票代码
-            stock_name: 股票名称
+            stock_code: Stock code
+            stock_name: Stock name
             include_news: 是否搜索新闻
             include_price: 是否搜索股价/走势信息
             max_results: 每类搜索的最大结果数
@@ -2956,13 +2956,13 @@ class SearchService:
         将股价搜索结果格式化为 AI 分析上下文
         
         Args:
-            response: 搜索响应对象
+            response: 搜索Response object
             
         Returns:
             格式化的文本，可直接用于 AI 分析
         """
         if not response.success or not response.results:
-            return "【股价走势搜索】未找到相关信息，请以其他渠道数据为准。"
+            return "【股价走势搜索】Not found相关信息，请以其他渠道数据为准。"
         
         lines = [
             f"【股价走势搜索结果】（来源: {response.provider}）",
@@ -3029,7 +3029,7 @@ if __name__ == "__main__":
     if service.is_available:
         print("=== 测试股票新闻搜索 ===")
         response = service.search_stock_news("300389", "艾比森")
-        print(f"搜索状态: {'成功' if response.success else '失败'}")
+        print(f"搜索状态: {'Succeeded' if response.success else 'Failed'}")
         print(f"搜索引擎: {response.provider}")
         print(f"结果数量: {len(response.results)}")
         print(f"耗时: {response.search_time:.2f}s")
