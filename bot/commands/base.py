@@ -39,7 +39,7 @@ class BotCommand(ABC):
                 return "/mycommand [参数]"
 
             def execute(self, message: BotMessage, args: List[str]) -> BotResponse:
-                return BotResponse.text_response("命令执行成功")
+                return BotResponse.text_response("命令执行Succeeded")
     """
 
     @property
@@ -74,7 +74,7 @@ class BotCommand(ABC):
         """
         使用说明（用于帮助信息）
 
-        例如 "/analyze <股票代码>"
+        例如 "/analyze <Stock code>"
         """
         pass
 
@@ -106,7 +106,7 @@ class BotCommand(ABC):
             args: 命令参数列表（已分割）
 
         Returns:
-            BotResponse 响应对象
+            BotResponse Response object
         """
         pass
 

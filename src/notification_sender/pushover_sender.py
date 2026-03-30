@@ -2,7 +2,7 @@
 """
 Pushover 发送提醒服务
 
-职责：
+Responsibilities:
 1. 通过 Pushover API 发送 Pushover 消息
 """
 import logging
@@ -59,7 +59,7 @@ class PushoverSender:
             title: 消息标题（可选，默认为"股票分析报告"）
             
         Returns:
-            是否发送成功
+            是否发送Succeeded
         """
         if not self._is_pushover_configured():
             logger.warning("Pushover 配置不完整，跳过推送")
@@ -123,19 +123,19 @@ class PushoverSender:
             if response.status_code == 200:
                 result = response.json()
                 if result.get('status') == 1:
-                    logger.info("Pushover 消息发送成功")
+                    logger.info("Pushover 消息发送Succeeded")
                     return True
                 else:
                     errors = result.get('errors', ['未知错误'])
                     logger.error(f"Pushover 返回错误: {errors}")
                     return False
             else:
-                logger.error(f"Pushover 请求失败: HTTP {response.status_code}")
+                logger.error(f"Pushover 请求Failed: HTTP {response.status_code}")
                 logger.debug(f"响应内容: {response.text}")
                 return False
                 
         except Exception as e:
-            logger.error(f"发送 Pushover 消息失败: {e}")
+            logger.error(f"发送 Pushover 消息Failed: {e}")
             return False
     
     def _send_pushover_chunked(
@@ -200,9 +200,9 @@ class PushoverSender:
             
             if self._send_pushover_message(api_url, user_key, api_token, chunk, chunk_title):
                 success_count += 1
-                logger.info(f"Pushover 第 {i+1}/{total_chunks} 批发送成功")
+                logger.info(f"Pushover 第 {i+1}/{total_chunks} 批发送Succeeded")
             else:
-                logger.error(f"Pushover 第 {i+1}/{total_chunks} 批发送失败")
+                logger.error(f"Pushover 第 {i+1}/{total_chunks} 批发送Failed")
             
             # 批次间隔，避免触发频率限制
             if i < total_chunks - 1:

@@ -4,7 +4,7 @@
 分析历史数据访问层
 ===================================
 
-职责：
+Responsibilities:
 1. 封装分析历史数据的数据库操作
 2. 提供 CRUD 接口
 """
@@ -39,16 +39,16 @@ class AnalysisRepository:
         根据 query_id 获取分析记录
         
         Args:
-            query_id: 查询 ID
+            query_id: Query ID
             
         Returns:
-            AnalysisHistory 对象，不存在返回 None
+            AnalysisHistory 对象，Does not exist返回 None
         """
         try:
             records = self.db.get_analysis_history(query_id=query_id, limit=1)
             return records[0] if records else None
         except Exception as e:
-            logger.error(f"查询分析记录失败: {e}")
+            logger.error(f"Query分析记录Failed: {e}")
             return None
     
     def get_list(
@@ -61,7 +61,7 @@ class AnalysisRepository:
         获取分析记录列表
         
         Args:
-            code: 股票代码筛选
+            code: Stock code filter
             days: 时间范围（天）
             limit: 返回数量限制
             
@@ -75,7 +75,7 @@ class AnalysisRepository:
                 limit=limit
             )
         except Exception as e:
-            logger.error(f"获取分析列表失败: {e}")
+            logger.error(f"获取分析列表Failed: {e}")
             return []
     
     def save(
@@ -87,11 +87,11 @@ class AnalysisRepository:
         context_snapshot: Optional[Dict[str, Any]] = None
     ) -> int:
         """
-        保存分析结果
+        保存Analysis result
         
         Args:
-            result: 分析结果对象
-            query_id: 查询 ID
+            result: Analysis result对象
+            query_id: Query ID
             report_type: 报告类型
             news_content: 新闻内容
             context_snapshot: 上下文快照
@@ -108,7 +108,7 @@ class AnalysisRepository:
                 context_snapshot=context_snapshot
             )
         except Exception as e:
-            logger.error(f"保存分析结果失败: {e}")
+            logger.error(f"保存Analysis resultFailed: {e}")
             return 0
     
     def count_by_code(self, code: str, days: int = 30) -> int:
@@ -116,7 +116,7 @@ class AnalysisRepository:
         统计指定股票的分析记录数
         
         Args:
-            code: 股票代码
+            code: Stock code
             days: 时间范围（天）
             
         Returns:
@@ -126,5 +126,5 @@ class AnalysisRepository:
             records = self.db.get_analysis_history(code=code, days=days, limit=1000)
             return len(records)
         except Exception as e:
-            logger.error(f"统计分析记录失败: {e}")
+            logger.error(f"统计分析记录Failed: {e}")
             return 0

@@ -4,7 +4,7 @@
 API v1 Schemas 模块初始化
 ===================================
 
-职责：
+Responsibilities:
 1. 导出所有 Pydantic 模型
 """
 

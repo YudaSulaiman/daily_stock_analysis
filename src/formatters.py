@@ -341,7 +341,7 @@ def chunk_content_by_max_bytes(content: str, max_bytes: int, add_page_marker: bo
 
             # 检查加入后是否超长
             if current_bytes + section_bytes > effective_max_bytes:
-                # 保存当前块，开始新块
+                # 保存当前块，Started新块
                 if current_chunk:
                     chunks.append("".join(current_chunk))
                 current_chunk = [section]
@@ -389,7 +389,7 @@ def slice_at_max_bytes(text: str, max_bytes: int) -> tuple[str, str]:
     if len(encoded) <= max_bytes:
         return text, ""
 
-    # 从最大字节数开始向前查找，找到完整的 UTF-8 字符边界
+    # 从最大字节数Started向前查找，找到完整的 UTF-8 字符边界
     truncated = encoded[:max_bytes]
     while truncated and (truncated[-1] & 0xC0) == 0x80:
         truncated = truncated[:-1]
@@ -597,7 +597,7 @@ def chunk_content_by_max_words(
         if max_words < MIN_MAX_WORDS:
             # Safe guard，避免无限递归
             # 理论上，max_words在每次递归中可以减小到无限小，但实际中不太可能发生，
-            # 除非每次_chunk_by_separators都能成功返回分隔符，且max_words初始值太小。
+            # 除非每次_chunk_by_separators都能Succeeded返回分隔符，且max_words初始值太小。
             raise ValueError(f"max_words={max_words} < {MIN_MAX_WORDS}, 可能陷入无限递归。")
         
         if _effective_len(content, special_char_len) <= max_words:
@@ -634,7 +634,7 @@ def chunk_content_by_max_words(
 
             # 检查加入后是否超长
             if current_word_len + section_word_len > max_words:
-                # 保存当前块，开始新块
+                # 保存当前块，Started新块
                 if current_chunk:
                     chunks.append("".join(current_chunk))
                 current_chunk = [section]

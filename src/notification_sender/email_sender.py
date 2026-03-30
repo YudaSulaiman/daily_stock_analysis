@@ -2,7 +2,7 @@
 """
 Email 发送提醒服务
 
-职责：
+Responsibilities:
 1. 通过 SMTP 发送 Email 消息
 """
 import logging
@@ -143,7 +143,7 @@ class EmailSender:
             receivers: 收件人列表（可选，默认使用配置的 receivers）
             
         Returns:
-            是否发送成功
+            是否发送Succeeded
         """
         if not self._is_email_configured():
             logger.warning("邮件配置不完整，跳过推送")
@@ -203,17 +203,17 @@ class EmailSender:
             server.login(sender, password)
             server.send_message(msg)
             
-            logger.info(f"邮件发送成功，收件人: {receivers}")
+            logger.info(f"邮件发送Succeeded，收件人: {receivers}")
             return True
             
         except smtplib.SMTPAuthenticationError:
-            logger.error("邮件发送失败：认证错误，请检查邮箱和授权码是否正确")
+            logger.error("邮件发送Failed：认证错误，请检查邮箱和授权码是否正确")
             return False
         except smtplib.SMTPConnectError as e:
-            logger.error(f"邮件发送失败：无法连接 SMTP 服务器 - {e}")
+            logger.error(f"邮件发送Failed：无法连接 SMTP 服务器 - {e}")
             return False
         except Exception as e:
-            logger.error(f"发送邮件失败: {e}")
+            logger.error(f"发送邮件Failed: {e}")
             return False
         finally:
             self._close_server(server)
@@ -266,10 +266,10 @@ class EmailSender:
                 server.starttls()
             server.login(sender, password)
             server.send_message(msg)
-            logger.info("邮件（内联图片）发送成功，收件人: %s", receivers)
+            logger.info("邮件（内联图片）发送Succeeded，收件人: %s", receivers)
             return True
         except Exception as e:
-            logger.error("邮件（内联图片）发送失败: %s", e)
+            logger.error("邮件（内联图片）发送Failed: %s", e)
             return False
         finally:
             self._close_server(server)

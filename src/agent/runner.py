@@ -457,7 +457,7 @@ def run_agent_loop(
             else:
                 last_tool = tool_calls_log[-1].get("tool", "")
                 label = labels.get(last_tool, last_tool)
-                thinking_msg = f"「{label}」已完成，继续深入分析..."
+                thinking_msg = f"「{label}」已Completed，继续深入分析..."
             progress_callback({"type": "thinking", "step": step + 1, "message": thinking_msg})
 
         # --- LLM call ---

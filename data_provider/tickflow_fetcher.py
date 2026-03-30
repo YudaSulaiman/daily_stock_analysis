@@ -71,7 +71,7 @@ class TickFlowFetcher(BaseFetcher):
             try:
                 client.close()
             except Exception as exc:
-                logger.debug("[TickFlowFetcher] 关闭客户端失败: %s", exc)
+                logger.debug("[TickFlowFetcher] 关闭客户端Failed: %s", exc)
 
     def __del__(self) -> None:
         try:
@@ -145,7 +145,7 @@ class TickFlowFetcher(BaseFetcher):
         return any(
             keyword in message
             for keyword in (
-                "标的池查询",
+                "标的池Query",
                 "universe",
                 "permission",
                 "forbidden",
@@ -271,7 +271,7 @@ class TickFlowFetcher(BaseFetcher):
                 self._universe_query_supported = False
                 self._universe_query_checked_at = now
                 logger.info(
-                    "[TickFlowFetcher] 当前套餐不支持标的池查询，市场统计回退到现有数据源"
+                    "[TickFlowFetcher] 当前套餐不支持标的池Query，市场统计回退到现有数据源"
                 )
                 return None
             raise
@@ -310,7 +310,7 @@ class TickFlowFetcher(BaseFetcher):
 
             name = self._extract_name(quote)
             if not name:
-                logger.debug("[TickFlowFetcher] 缺少股票名称，按非 ST 处理: %s", symbol)
+                logger.debug("[TickFlowFetcher] 缺少Stock name，按非 ST 处理: %s", symbol)
 
             ratio = self._get_limit_ratio(pure_code, name)
             limit_up = self._round_limit_price(prev_close, ratio)

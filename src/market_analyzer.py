@@ -1,13 +1,13 @@
 # -*- coding: utf-8 -*-
 """
 ===================================
-大盘复盘分析模块
+Market review分析模块
 ===================================
 
-职责：
+Responsibilities:
 1. 获取大盘指数数据（上证、深证、创业板）
 2. 搜索市场新闻形成复盘情报
-3. 使用大模型生成每日大盘复盘报告
+3. 使用大模型生成每日Market review报告
 """
 
 import logging
@@ -93,14 +93,14 @@ class MarketOverview:
 
 class MarketAnalyzer:
     """
-    大盘复盘分析器
+    Market review分析器
     
     功能：
     1. 获取大盘指数实时行情
     2. 获取市场涨跌统计
     3. 获取板块涨跌榜
     4. 搜索市场新闻
-    5. 生成大盘复盘报告
+    5. 生成Market review报告
     """
     
     def __init__(
@@ -291,12 +291,12 @@ Focus on index trend, liquidity, and sector rotation to shape the next-session t
                     indices.append(index)
 
             if not indices:
-                logger.warning("[大盘] 所有行情数据源失败，将依赖新闻搜索进行分析")
+                logger.warning("[大盘] 所有行情数据源Failed，将依赖新闻搜索进行分析")
             else:
                 logger.info(f"[大盘] 获取到 {len(indices)} 个指数行情")
 
         except Exception as e:
-            logger.error(f"[大盘] 获取指数行情失败: {e}")
+            logger.error(f"[大盘] 获取指数行情Failed: {e}")
 
         return indices
 
@@ -320,7 +320,7 @@ Focus on index trend, liquidity, and sector rotation to shape the next-session t
                           f"成交额:{overview.total_amount:.0f}亿")
 
         except Exception as e:
-            logger.error(f"[大盘] 获取涨跌统计失败: {e}")
+            logger.error(f"[大盘] 获取涨跌统计Failed: {e}")
 
     def _get_sector_rankings(self, overview: MarketOverview):
         """获取板块涨跌榜"""
@@ -337,7 +337,7 @@ Focus on index trend, liquidity, and sector rotation to shape the next-session t
                 logger.info(f"[大盘] 领跌板块: {[s['name'] for s in overview.bottom_sectors]}")
 
         except Exception as e:
-            logger.error(f"[大盘] 获取板块涨跌榜失败: {e}")
+            logger.error(f"[大盘] 获取板块涨跌榜Failed: {e}")
     
     # def _get_north_flow(self, overview: MarketOverview):
     #     """获取北向资金流入"""
@@ -358,7 +358,7 @@ Focus on index trend, liquidity, and sector rotation to shape the next-session t
     #             logger.info(f"[大盘] 北向资金净流入: {overview.north_flow:.2f}亿")
     #             
     #     except Exception as e:
-    #         logger.warning(f"[大盘] 获取北向资金失败: {e}")
+    #         logger.warning(f"[大盘] 获取北向资金Failed: {e}")
     
     def search_market_news(self) -> List[Dict]:
         """
@@ -377,7 +377,7 @@ Focus on index trend, liquidity, and sector rotation to shape the next-session t
         search_queries = self.profile.news_queries
         
         try:
-            logger.info("[大盘] 开始搜索市场新闻...")
+            logger.info("[大盘] Started搜索市场新闻...")
             
             # 根据 region 设置搜索上下文名称，避免美股搜索被解读为 A 股语境
             market_name = "大盘" if self.region == "cn" else "US market"
@@ -395,20 +395,20 @@ Focus on index trend, liquidity, and sector rotation to shape the next-session t
             logger.info(f"[大盘] 共获取 {len(all_news)} 条市场新闻")
             
         except Exception as e:
-            logger.error(f"[大盘] 搜索市场新闻失败: {e}")
+            logger.error(f"[大盘] 搜索市场新闻Failed: {e}")
         
         return all_news
     
     def generate_market_review(self, overview: MarketOverview, news: List) -> str:
         """
-        使用大模型生成大盘复盘报告
+        使用大模型生成Market review报告
         
         Args:
             overview: 市场概览数据
             news: 市场新闻列表 (SearchResult 对象列表)
             
         Returns:
-            大盘复盘报告文本
+            Market review报告文本
         """
         if not self.analyzer or not self.analyzer.is_available():
             logger.warning("[大盘] AI分析器未配置或不可用，使用模板生成报告")
@@ -422,7 +422,7 @@ Focus on index trend, liquidity, and sector rotation to shape the next-session t
         review = self.analyzer.generate_text(prompt, max_tokens=8192, temperature=0.7)
 
         if review:
-            logger.info("[大盘] 复盘报告生成成功，长度: %d 字符", len(review))
+            logger.info("[大盘] 复盘报告生成Succeeded，长度: %d 字符", len(review))
             # Inject structured data tables into LLM prose sections
             return self._inject_data_into_review(review, overview)
         else:
@@ -608,7 +608,7 @@ Lagging: {bottom_sectors_text if bottom_sectors_text else "N/A"}"""
                 sector_block = "## 板块表现\n（美股暂无板块涨跌数据）"
 
         data_no_indices_hint = (
-            "注意：由于行情数据获取失败，请主要根据【市场新闻】进行定性分析和总结，不要编造具体的指数点位。"
+            "注意：由于行情数据获取Failed，请主要根据【市场新闻】进行定性分析和总结，不要编造具体的指数点位。"
             if not indices_text
             else ""
         )
@@ -689,7 +689,7 @@ Output the report content directly, no extra commentary.
 """
 
         # A 股场景使用中文提示语
-        return f"""你是一位专业的A/H/美股市场分析师，请根据以下数据生成一份简洁的大盘复盘报告。
+        return f"""你是一位专业的A/H/美股市场分析师，请根据以下数据生成一份简洁的Market review报告。
 
 【重要】输出要求：
 - 必须输出纯 Markdown 文本格式
@@ -722,7 +722,7 @@ Output the report content directly, no extra commentary.
 
 # 输出格式模板（请严格按此格式输出）
 
-## {overview.date} 大盘复盘
+## {overview.date} Market review
 
 ### 一、市场总结
 （2-3句话概括今日市场整体表现，包括指数涨跌、成交量变化）
@@ -849,7 +849,7 @@ Market conditions can change quickly. The data above is for reference only and d
 """
         market_label = "A股" if self.region == "cn" else "美股"
         strategy_summary = self._get_strategy_markdown_block(template_language)
-        return f"""## {overview.date} 大盘复盘
+        return f"""## {overview.date} Market review
 
 ### 一、市场总结
 今日{market_label}市场整体呈现**{market_mood}**态势。
@@ -869,12 +869,12 @@ Market conditions can change quickly. The data above is for reference only and d
     
     def run_daily_review(self) -> str:
         """
-        执行每日大盘复盘流程
+        执行每日Market review流程
         
         Returns:
             复盘报告文本
         """
-        logger.info("========== 开始大盘复盘分析 ==========")
+        logger.info("========== StartedMarket review分析 ==========")
         
         # 1. 获取市场概览
         overview = self.get_market_overview()
@@ -885,7 +885,7 @@ Market conditions can change quickly. The data above is for reference only and d
         # 3. 生成复盘报告
         report = self.generate_market_review(overview, news)
         
-        logger.info("========== 大盘复盘分析完成 ==========")
+        logger.info("========== Market review分析Completed ==========")
         
         return report
 

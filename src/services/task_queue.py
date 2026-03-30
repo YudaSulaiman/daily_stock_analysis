@@ -1,14 +1,14 @@
 # -*- coding: utf-8 -*-
 """
 ===================================
-A股自选股智能分析系统 - 异步任务队列
+A-share Stock Intelligent Analysis System - 异步任务队列
 ===================================
 
-职责：
+Responsibilities:
 1. 管理异步分析任务的生命周期
-2. 防止相同股票代码重复提交
+2. 防止相同Stock code重复提交
 3. 提供 SSE 事件广播机制
-4. 任务完成后持久化到数据库
+4. 任务Completed后持久化到数据库
 """
 
 from __future__ import annotations
@@ -128,11 +128,11 @@ class AnalysisTaskQueue:
     
     单例模式，全局唯一实例
     
-    特性：
-    1. 防止相同股票代码重复提交
+    Features:
+    1. 防止相同Stock code重复提交
     2. 线程池执行分析任务
     3. SSE 事件广播机制
-    4. 任务完成后自动持久化
+    4. 任务Completed后自动持久化
     """
     
     _instance: Optional['AnalysisTaskQueue'] = None
@@ -172,7 +172,7 @@ class AnalysisTaskQueue:
         self._max_history = 100
         
         self._initialized = True
-        logger.info(f"[TaskQueue] 初始化完成，最大并发: {max_workers}")
+        logger.info(f"[TaskQueue] 初始化Completed，最大并发: {max_workers}")
     
     @property
     def executor(self) -> ThreadPoolExecutor:
@@ -246,14 +246,14 @@ class AnalysisTaskQueue:
             logger.info("[TaskQueue] 最大并发已更新: %s -> %s", previous, target)
         return "applied"
     
-    # ========== 任务提交与查询 ==========
+    # ========== 任务提交与Query ==========
     
     def is_analyzing(self, stock_code: str) -> bool:
         """
         检查股票是否正在分析中
         
         Args:
-            stock_code: 股票代码
+            stock_code: Stock code
             
         Returns:
             True 表示正在分析中
@@ -267,7 +267,7 @@ class AnalysisTaskQueue:
         获取正在分析该股票的任务 ID
         
         Args:
-            stock_code: 股票代码
+            stock_code: Stock code
             
         Returns:
             任务 ID，如果没有则返回 None
@@ -320,7 +320,7 @@ class AnalysisTaskQueue:
         """
         stock_code = canonical_stock_code(stock_code)
         if not stock_code:
-            raise ValueError("股票代码不能为空或仅包含空白字符")
+            raise ValueError("Stock code cannot be empty or contain only whitespace")
 
         accepted, duplicates = self.submit_tasks_batch(
             [stock_code],
@@ -442,7 +442,7 @@ class AnalysisTaskQueue:
         获取所有进行中的任务（pending + processing）
         
         Returns:
-            任务列表（副本）
+            Task list（副本）
         """
         with self._data_lock:
             return [
@@ -458,7 +458,7 @@ class AnalysisTaskQueue:
             limit: 返回数量限制
             
         Returns:
-            任务列表（副本）
+            Task list（副本）
         """
         with self._data_lock:
             tasks = sorted(
@@ -538,12 +538,12 @@ class AnalysisTaskQueue:
         
         Args:
             task_id: 任务 ID
-            stock_code: 股票代码
+            stock_code: Stock code
             report_type: 报告类型
             force_refresh: 是否强制刷新
             
         Returns:
-            分析结果字典
+            Analysis result字典
         """
         # 更新状态为处理中
         with self._data_lock:
@@ -577,7 +577,7 @@ class AnalysisTaskQueue:
             )
             
             if result:
-                # 更新任务状态为完成
+                # 更新Task status为Completed
                 with self._data_lock:
                     task = self._tasks.get(task_id)
                     if task:
@@ -585,7 +585,7 @@ class AnalysisTaskQueue:
                         task.progress = 100
                         task.completed_at = datetime.now()
                         task.result = result
-                        task.message = "分析完成"
+                        task.message = "分析Completed"
                         task.stock_name = result.get("stock_name", task.stock_name)
                         
                         # 从分析中集合移除
@@ -594,7 +594,7 @@ class AnalysisTaskQueue:
                             del self._analyzing_stocks[dedupe_key]
                 
                 self._broadcast_event("task_completed", task.to_dict())
-                logger.info(f"[TaskQueue] 任务完成: {task_id} ({stock_code})")
+                logger.info(f"[TaskQueue] 任务Completed: {task_id} ({stock_code})")
                 
                 # 清理过期任务
                 self._cleanup_old_tasks()
@@ -606,7 +606,7 @@ class AnalysisTaskQueue:
                 
         except Exception as e:
             error_msg = str(e)
-            logger.error(f"[TaskQueue] 任务失败: {task_id} ({stock_code}), 错误: {error_msg}")
+            logger.error(f"[TaskQueue] 任务Failed: {task_id} ({stock_code}), 错误: {error_msg}")
             
             with self._data_lock:
                 task = self._tasks.get(task_id)
@@ -614,7 +614,7 @@ class AnalysisTaskQueue:
                     task.status = TaskStatus.FAILED
                     task.completed_at = datetime.now()
                     task.error = error_msg[:200]  # 限制错误信息长度
-                    task.message = f"分析失败: {error_msg[:50]}"
+                    task.message = f"Analysis failed: {error_msg[:50]}"
                     
                     # 从分析中集合移除
                     dedupe_key = _dedupe_stock_code_key(task.stock_code)
@@ -630,7 +630,7 @@ class AnalysisTaskQueue:
     
     def _cleanup_old_tasks(self) -> int:
         """
-        清理过期的已完成任务
+        清理过期的已Completed任务
         
         保留最近 _max_history 个任务
         
@@ -641,7 +641,7 @@ class AnalysisTaskQueue:
             if len(self._tasks) <= self._max_history:
                 return 0
             
-            # 按时间排序，删除旧的已完成任务
+            # 按时间排序，删除旧的已Completed任务
             completed_tasks = sorted(
                 [t for t in self._tasks.values()
                  if t.status in (TaskStatus.COMPLETED, TaskStatus.FAILED)],
@@ -728,7 +728,7 @@ class AnalysisTaskQueue:
                 # 事件循环已关闭
                 logger.debug(f"[TaskQueue] 广播事件跳过（循环已关闭）: {e}")
             except Exception as e:
-                logger.warning(f"[TaskQueue] 广播事件失败: {e}")
+                logger.warning(f"[TaskQueue] 广播事件Failed: {e}")
     
     # ========== 清理方法 ==========
     
@@ -757,6 +757,6 @@ def get_task_queue() -> AnalysisTaskQueue:
         target_workers = max(1, int(getattr(config, "max_workers", queue.max_workers)))
         queue.sync_max_workers(target_workers, log=False)
     except Exception as exc:
-        logger.debug("[TaskQueue] 读取 MAX_WORKERS 失败，使用当前并发设置: %s", exc)
+        logger.debug("[TaskQueue] 读取 MAX_WORKERS Failed，使用当前并发设置: %s", exc)
 
     return queue

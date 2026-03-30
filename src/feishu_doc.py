@@ -55,13 +55,13 @@ class FeishuDocManager:
             response = self.client.docx.v1.document.create(create_request)
 
             if not response.success():
-                logger.error(f"创建文档失败: {response.code} - {response.msg} - {response.error}")
+                logger.error(f"创建文档Failed: {response.code} - {response.msg} - {response.error}")
                 return None
 
             doc_id = response.data.document.document_id
             # 这里的 domain 只是为了生成链接，实际访问会重定向
             doc_url = f"https://feishu.cn/docx/{doc_id}"
-            logger.info(f"飞书文档创建成功: {title} (ID: {doc_id})")
+            logger.info(f"飞书文档创建Succeeded: {title} (ID: {doc_id})")
 
             # 2. 解析 Markdown 并写入内容
             # 将 Markdown 转换为 SDK 需要的 Block 对象列表
@@ -87,9 +87,9 @@ class FeishuDocManager:
                 write_resp = self.client.docx.v1.document_block_children.create(batch_add_request)
 
                 if not write_resp.success():
-                    logger.error(f"写入文档内容失败(批次{i}): {write_resp.code} - {write_resp.msg}")
+                    logger.error(f"写入文档内容Failed(批次{i}): {write_resp.code} - {write_resp.msg}")
 
-            logger.info(f"文档内容写入完成")
+            logger.info(f"文档内容写入Completed")
             return doc_url
 
         except Exception as e:

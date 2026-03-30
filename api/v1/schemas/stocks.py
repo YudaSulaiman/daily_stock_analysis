@@ -4,7 +4,7 @@
 股票数据相关模型
 ===================================
 
-职责：
+Responsibilities:
 1. 定义股票实时行情模型
 2. 定义历史 K 线数据模型
 """
@@ -17,8 +17,8 @@ from pydantic import BaseModel, Field
 class StockQuote(BaseModel):
     """股票实时行情"""
     
-    stock_code: str = Field(..., description="股票代码")
-    stock_name: Optional[str] = Field(None, description="股票名称")
+    stock_code: str = Field(..., description="Stock code")
+    stock_name: Optional[str] = Field(None, description="Stock name")
     current_price: float = Field(..., description="当前价格")
     change: Optional[float] = Field(None, description="涨跌额")
     change_percent: Optional[float] = Field(None, description="涨跌幅 (%)")
@@ -79,15 +79,15 @@ class KLineData(BaseModel):
 class ExtractItem(BaseModel):
     """单条提取结果（代码、名称、置信度）"""
 
-    code: Optional[str] = Field(None, description="股票代码，None 表示解析失败")
-    name: Optional[str] = Field(None, description="股票名称（如有）")
+    code: Optional[str] = Field(None, description="Stock code，None 表示解析Failed")
+    name: Optional[str] = Field(None, description="Stock name（如有）")
     confidence: str = Field("medium", description="置信度：high/medium/low")
 
 
 class ExtractFromImageResponse(BaseModel):
-    """图片股票代码提取响应"""
+    """图片Stock code提取响应"""
 
-    codes: List[str] = Field(..., description="提取的股票代码（已去重，向后兼容）")
+    codes: List[str] = Field(..., description="提取的Stock code（已去重，向后兼容）")
     items: List[ExtractItem] = Field(default_factory=list, description="提取结果明细（代码+名称+置信度）")
     raw_text: Optional[str] = Field(None, description="原始 LLM 响应（调试用）")
 
@@ -95,8 +95,8 @@ class ExtractFromImageResponse(BaseModel):
 class StockHistoryResponse(BaseModel):
     """股票历史行情响应"""
     
-    stock_code: str = Field(..., description="股票代码")
-    stock_name: Optional[str] = Field(None, description="股票名称")
+    stock_code: str = Field(..., description="Stock code")
+    stock_name: Optional[str] = Field(None, description="Stock name")
     period: str = Field(..., description="K 线周期")
     data: List[KLineData] = Field(default_factory=list, description="K 线数据列表")
     

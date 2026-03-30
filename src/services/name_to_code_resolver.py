@@ -219,5 +219,5 @@ def resolve_name_to_code(name: str) -> Optional[str]:
             logger.debug(f"[NameResolver] 命中单字误写兜底: input={s}, matched={typo_matches[0]}")
             return all_name_to_code[typo_matches[0]]
 
-    logger.debug(f"[NameResolver] 解析失败: {s}")
+    logger.debug(f"[NameResolver] 解析Failed: {s}")
     return None

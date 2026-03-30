@@ -2,7 +2,7 @@
 """
 AstrBot 发送提醒服务
 
-职责：
+Responsibilities:
 1. 通过 Astrbot API 发送 AstrBot 消息
 """
 import logging
@@ -47,7 +47,7 @@ class AstrbotSender:
             content: Markdown 格式的消息内容
 
         Returns:
-            是否发送成功
+            是否发送Succeeded
         """
         if self._astrbot_config['astrbot_url']:
             return self._send_astrbot(content)
@@ -65,7 +65,7 @@ class AstrbotSender:
             content: Markdown 格式的消息内容
 
         Returns:
-            是否发送成功
+            是否发送Succeeded
         """
 
         html_content = markdown_to_html_document(content)
@@ -98,10 +98,10 @@ class AstrbotSender:
             )
 
             if response.status_code == 200:
-                logger.info("AstrBot 消息发送成功")
+                logger.info("AstrBot 消息发送Succeeded")
                 return True
             else:
-                logger.error(f"AstrBot 发送失败: {response.status_code} {response.text}")
+                logger.error(f"AstrBot 发送Failed: {response.status_code} {response.text}")
                 return False
         except Exception as e:
             logger.error(f"AstrBot 发送异常: {e}")

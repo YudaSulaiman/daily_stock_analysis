@@ -131,7 +131,7 @@ class HistoryService:
             }
             
         except Exception as e:
-            logger.error(f"查询历史列表失败: {e}", exc_info=True)
+            logger.error(f"Query历史列表Failed: {e}", exc_info=True)
             return {"total": 0, "items": []}
 
     def _resolve_record(self, record_id: str):
@@ -216,7 +216,7 @@ class HistoryService:
                 return None
             return self._record_to_detail_dict(record)
         except Exception as e:
-            logger.error(f"根据 ID 查询历史详情失败: {e}", exc_info=True)
+            logger.error(f"根据 ID Query历史详情Failed: {e}", exc_info=True)
             return None
 
     @staticmethod
@@ -336,7 +336,7 @@ class HistoryService:
             return items
 
         except Exception as e:
-            logger.error(f"查询新闻情报失败: {e}", exc_info=True)
+            logger.error(f"Query新闻情报Failed: {e}", exc_info=True)
             return []
 
     def get_news_intel_by_record_id(self, record_id: int, limit: int = 20) -> List[Dict[str, str]]:
@@ -363,7 +363,7 @@ class HistoryService:
             return self.get_news_intel(query_id=record.query_id, limit=limit)
 
         except Exception as e:
-            logger.error(f"根据 record_id 查询新闻情报失败: {e}", exc_info=True)
+            logger.error(f"根据 record_id Query新闻情报Failed: {e}", exc_info=True)
             return []
 
     def _fallback_news_by_analysis_context(self, query_id: str, limit: int) -> List[Any]:

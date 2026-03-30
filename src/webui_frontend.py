@@ -109,12 +109,12 @@ def _run_frontend_commands(commands: Sequence[Sequence[str]], frontend_dir: Path
         for command in commands:
             logger.info("执行前端命令: %s", " ".join(command))
             subprocess.run(command, cwd=frontend_dir, check=True)
-        logger.info("前端静态资源构建完成")
+        logger.info("前端静态资源构建Completed")
         return True
     except subprocess.CalledProcessError as exc:
         cmd_display = " ".join(exc.cmd) if isinstance(exc.cmd, (list, tuple)) else str(exc.cmd)
         logger.error(
-            "前端命令执行失败（exit_code=%s）: %s",
+            "前端命令Execution failed（exit_code=%s）: %s",
             getattr(exc, "returncode", "N/A"),
             cmd_display,
         )
@@ -202,7 +202,7 @@ def prepare_webui_frontend_assets() -> bool:
 
     package_json = frontend_dir / "package.json"
     if not package_json.exists():
-        logger.warning("未找到前端项目，无法自动构建: %s", package_json)
+        logger.warning("Not found前端项目，无法自动构建: %s", package_json)
         logger.warning("可先手动检查前端目录或关闭 WEBUI_AUTO_BUILD")
         return False
 

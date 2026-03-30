@@ -195,7 +195,7 @@ class DiscordPlatform(BotPlatform):
         callback 格式（type=4 CHANNEL_MESSAGE_WITH_SOURCE + nested data）。
         
         Args:
-            response: 统一响应对象
+            response: 统一Response object
             message: 原始消息对象
             
         Returns:

@@ -93,11 +93,11 @@ class StrategiesCommand(BotCommand):
             active_count = sum(1 for s in all_skills if s.name in configured_active)
             total_count = len(all_skills)
             lines.append(f"共 {total_count} 个策略，已激活 {active_count} 个")
-            lines.append(f"\n💡 使用 `/ask <股票代码> <策略名>` 指定策略分析")
+            lines.append(f"\n💡 使用 `/ask <Stock code> <策略名>` 指定策略分析")
 
             return BotResponse.markdown_response("\n".join(lines))
 
         except Exception as e:
             logger.error(f"Strategies command failed: {e}")
             logger.exception("Strategies error details:")
-            return BotResponse.text_response(f"⚠️ 获取策略列表失败: {str(e)}")
+            return BotResponse.text_response(f"⚠️ 获取策略列表Failed: {str(e)}")

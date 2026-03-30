@@ -2,7 +2,7 @@
 """
 Wechat 发送提醒服务
 
-职责：
+Responsibilities:
 1. 通过企业微信 Webhook 发送文本消息
 2. 通过企业微信 Webhook 发送图片消息
 """
@@ -67,7 +67,7 @@ class WechatSender:
             content: Markdown 格式的消息内容
             
         Returns:
-            是否发送成功
+            是否发送Succeeded
         """
         if not self._wechat_url:
             logger.warning("企业微信 Webhook 未配置，跳过推送")
@@ -88,7 +88,7 @@ class WechatSender:
         try:
             return self._send_wechat_message(content)
         except Exception as e:
-            logger.error(f"发送企业微信消息失败: {e}")
+            logger.error(f"发送企业微信消息Failed: {e}")
             return False
 
     def _send_wechat_image(self, image_bytes: bytes) -> bool:
@@ -114,11 +114,11 @@ class WechatSender:
             if response.status_code == 200:
                 result = response.json()
                 if result.get("errcode") == 0:
-                    logger.info("企业微信图片发送成功")
+                    logger.info("企业微信图片发送Succeeded")
                     return True
-                logger.error("企业微信图片发送失败: %s", result.get("errmsg", ""))
+                logger.error("企业微信图片发送Failed: %s", result.get("errmsg", ""))
             else:
-                logger.error("企业微信请求失败: HTTP %s", response.status_code)
+                logger.error("企业微信请求Failed: HTTP %s", response.status_code)
             return False
         except Exception as e:
             logger.error("企业微信图片发送异常: %s", e)
@@ -138,13 +138,13 @@ class WechatSender:
         if response.status_code == 200:
             result = response.json()
             if result.get('errcode') == 0:
-                logger.info("企业微信消息发送成功")
+                logger.info("企业微信消息发送Succeeded")
                 return True
             else:
                 logger.error(f"企业微信返回错误: {result}")
                 return False
         else:
-            logger.error(f"企业微信请求失败: {response.status_code}")
+            logger.error(f"企业微信请求Failed: {response.status_code}")
             return False
         
     def _send_wechat_chunked(self, content: str, max_bytes: int) -> bool:
@@ -158,7 +158,7 @@ class WechatSender:
             max_bytes: 单条消息最大字节数
             
         Returns:
-            是否全部发送成功
+            是否全部发送Succeeded
         """
         chunks = chunk_content_by_max_bytes(content, max_bytes, add_page_marker=True)
         total_chunks = len(chunks)
@@ -167,7 +167,7 @@ class WechatSender:
             if self._send_wechat_message(chunk):
                 success_count += 1
             else:
-                logger.error(f"企业微信第 {i+1}/{total_chunks} 批发送失败")
+                logger.error(f"企业微信第 {i+1}/{total_chunks} 批发送Failed")
             if i < total_chunks - 1:
                 time.sleep(1)
         return success_count == len(chunks)

@@ -1,12 +1,12 @@
 # -*- coding: utf-8 -*-
 """
 ===================================
-股票智能分析系统 - 大盘复盘模块（支持 A 股 / 美股）
+股票智能分析系统 - Market review模块（支持 A 股 / 美股）
 ===================================
 
-职责：
+Responsibilities:
 1. 根据 MARKET_REVIEW_REGION 配置选择市场区域（cn / us / both）
-2. 执行大盘复盘分析并生成复盘报告
+2. 执行Market review分析并生成复盘报告
 3. 保存和发送复盘报告
 """
 
@@ -53,7 +53,7 @@ def run_market_review(
     override_region: Optional[str] = None,
 ) -> Optional[str]:
     """
-    执行大盘复盘分析
+    执行Market review分析
 
     Args:
         notifier: 通知服务
@@ -66,7 +66,7 @@ def run_market_review(
     Returns:
         复盘报告文本
     """
-    logger.info("开始执行大盘复盘分析...")
+    logger.info("Started执行Market review分析...")
     config = get_config()
     review_text = _get_market_review_text(getattr(config, "report_language", "zh"))
     region = (
@@ -86,9 +86,9 @@ def run_market_review(
             us_analyzer = MarketAnalyzer(
                 search_service=search_service, analyzer=analyzer, region='us'
             )
-            logger.info("生成 A 股大盘复盘报告...")
+            logger.info("生成 A 股Market review报告...")
             cn_report = cn_analyzer.run_daily_review()
-            logger.info("生成美股大盘复盘报告...")
+            logger.info("生成美股Market review报告...")
             us_report = us_analyzer.run_daily_review()
             review_report = ''
             if cn_report:
@@ -112,29 +112,29 @@ def run_market_review(
             date_str = datetime.now().strftime('%Y%m%d')
             report_filename = f"market_review_{date_str}.md"
             filepath = notifier.save_report_to_file(
-                f"{review_text['root_title']}\n\n{review_report}",
+                f"# 🎯 Market review\n\n{review_report}", 
                 report_filename
             )
-            logger.info(f"大盘复盘报告已保存: {filepath}")
+            logger.info(f"Market review报告已保存: {filepath}")
             
             # 推送通知（合并模式下跳过，由 main 层统一发送）
             if merge_notification and send_notification:
-                logger.info("合并推送模式：跳过大盘复盘单独推送，将在个股+大盘复盘后统一发送")
+                logger.info("合并推送模式：跳过Market review单独推送，将在个股+Market review后统一发送")
             elif send_notification and notifier.is_available():
                 # 添加标题
-                report_content = f"{review_text['push_title']}\n\n{review_report}"
+                report_content = f"🎯 Market review\n\n{review_report}"
 
                 success = notifier.send(report_content, email_send_to_all=True)
                 if success:
-                    logger.info("大盘复盘推送成功")
+                    logger.info("Market review推送Succeeded")
                 else:
-                    logger.warning("大盘复盘推送失败")
+                    logger.warning("Market review推送Failed")
             elif not send_notification:
                 logger.info("已跳过推送通知 (--no-notify)")
             
             return review_report
         
     except Exception as e:
-        logger.error(f"大盘复盘分析失败: {e}")
+        logger.error(f"Market reviewAnalysis failed: {e}")
     
     return None

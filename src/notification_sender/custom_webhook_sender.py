@@ -2,7 +2,7 @@
 """
 自定义 Webhook 发送提醒服务
 
-职责：
+Responsibilities:
 1. 发送自定义 Webhook 消息
 """
 import logging
@@ -47,7 +47,7 @@ class CustomWebhookSender:
             content: 消息内容（Markdown 格式）
             
         Returns:
-            是否至少有一个 Webhook 发送成功
+            是否至少有一个 Webhook 发送Succeeded
         """
         if not self._custom_webhook_urls:
             logger.warning("未配置自定义 Webhook，跳过推送")
@@ -65,24 +65,24 @@ class CustomWebhookSender:
                 # 钉钉机器人对 body 有字节上限（约 20000 bytes），超长需要分批发送
                 if self._is_dingtalk_webhook(url):
                     if self._send_dingtalk_chunked(url, content, max_bytes=20000):
-                        logger.info(f"自定义 Webhook {i+1}（钉钉）推送成功")
+                        logger.info(f"自定义 Webhook {i+1}（钉钉）推送Succeeded")
                         success_count += 1
                     else:
-                        logger.error(f"自定义 Webhook {i+1}（钉钉）推送失败")
+                        logger.error(f"自定义 Webhook {i+1}（钉钉）推送Failed")
                     continue
 
                 # 其他 Webhook：单次发送
                 payload = self._build_custom_webhook_payload(url, content)
                 if self._post_custom_webhook(url, payload, timeout=30):
-                    logger.info(f"自定义 Webhook {i+1} 推送成功")
+                    logger.info(f"自定义 Webhook {i+1} 推送Succeeded")
                     success_count += 1
                 else:
-                    logger.error(f"自定义 Webhook {i+1} 推送失败")
+                    logger.error(f"自定义 Webhook {i+1} 推送Failed")
                     
             except Exception as e:
                 logger.error(f"自定义 Webhook {i+1} 推送异常: {e}")
         
-        logger.info(f"自定义 Webhook 推送完成：成功 {success_count}/{len(self._custom_webhook_urls)}")
+        logger.info(f"自定义 Webhook 推送Completed：Succeeded {success_count}/{len(self._custom_webhook_urls)}")
         return success_count > 0
 
     
@@ -108,11 +108,11 @@ class CustomWebhookSender:
                         verify=self._webhook_verify_ssl
                     )
                     if response.status_code in (200, 204):
-                        logger.info("自定义 Webhook %d（Discord 图片）推送成功", i + 1)
+                        logger.info("自定义 Webhook %d（Discord 图片）推送Succeeded", i + 1)
                         success_count += 1
                     else:
                         logger.error(
-                            "自定义 Webhook %d（Discord 图片）推送失败: HTTP %s",
+                            "自定义 Webhook %d（Discord 图片）推送Failed: HTTP %s",
                             i + 1, response.status_code,
                         )
                 else:
@@ -120,7 +120,7 @@ class CustomWebhookSender:
                         payload = self._build_custom_webhook_payload(url, fallback_content)
                         if self._post_custom_webhook(url, payload, timeout=30):
                             logger.info(
-                                "自定义 Webhook %d（图片不支持，回退文本）推送成功", i + 1
+                                "自定义 Webhook %d（图片不支持，回退文本）推送Succeeded", i + 1
                             )
                             success_count += 1
                     else:
@@ -143,7 +143,7 @@ class CustomWebhookSender:
         response = requests.post(url, data=body, headers=headers, timeout=timeout, verify=self._webhook_verify_ssl)
         if response.status_code == 200:
             return True
-        logger.error(f"自定义 Webhook 推送失败: HTTP {response.status_code}")
+        logger.error(f"自定义 Webhook 推送Failed: HTTP {response.status_code}")
         logger.debug(f"响应内容: {response.text[:200]}")
         return False
     
@@ -227,7 +227,7 @@ class CustomWebhookSender:
             if self._post_custom_webhook(url, payload, timeout=30):
                 ok += 1
             else:
-                logger.error(f"钉钉分批发送失败: 第 {idx+1}/{total} 批")
+                logger.error(f"钉钉分批发送Failed: 第 {idx+1}/{total} 批")
 
             if idx < total - 1:
                 _time.sleep(1)

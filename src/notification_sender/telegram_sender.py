@@ -2,7 +2,7 @@
 """
 Telegram 发送提醒服务
 
-职责：
+Responsibilities:
 1. 通过 Telegram Bot API 发送 文本消息
 2. 通过 Telegram Bot API 发送 图片消息
 """
@@ -53,7 +53,7 @@ class TelegramSender:
             content: 消息内容（Markdown 格式）
             
         Returns:
-            是否发送成功
+            是否发送Succeeded
         """
         if not self._is_telegram_configured():
             logger.warning("Telegram 配置不完整，跳过推送")
@@ -78,7 +78,7 @@ class TelegramSender:
                 return self._send_telegram_chunked(api_url, chat_id, content, max_length, message_thread_id)
                 
         except Exception as e:
-            logger.error(f"发送 Telegram 消息失败: {e}")
+            logger.error(f"发送 Telegram 消息Failed: {e}")
             import traceback
             logger.debug(traceback.format_exc())
             return False
@@ -116,7 +116,7 @@ class TelegramSender:
             if response.status_code == 200:
                 result = response.json()
                 if result.get('ok'):
-                    logger.info("Telegram 消息发送成功")
+                    logger.info("Telegram 消息发送Succeeded")
                     return True
                 else:
                     error_desc = result.get('description', '未知错误')
@@ -149,7 +149,7 @@ class TelegramSender:
                 if self._should_fallback_to_plain_text(response_text=response.text):
                     if self._send_plain_text_fallback(api_url, payload, text):
                         return True
-                logger.error(f"Telegram 请求失败: HTTP {response.status_code}")
+                logger.error(f"Telegram 请求Failed: HTTP {response.status_code}")
                 logger.error(f"响应内容: {response.text}")
                 return False
 
@@ -171,7 +171,7 @@ class TelegramSender:
 
     def _send_plain_text_fallback(self, api_url: str, payload: dict, text: str) -> bool:
         """Retry Telegram send without parse_mode when Markdown parsing fails."""
-        logger.info("Telegram Markdown 解析失败，尝试使用纯文本格式重新发送...")
+        logger.info("Telegram Markdown 解析Failed，尝试使用纯文本格式重新发送...")
         plain_payload = dict(payload)
         plain_payload.pop('parse_mode', None)
         plain_payload['text'] = text
@@ -186,19 +186,19 @@ class TelegramSender:
             try:
                 result = response.json()
             except ValueError:
-                logger.error("Telegram 纯文本回退失败: 响应不是有效 JSON")
+                logger.error("Telegram 纯文本回退Failed: 响应不是有效 JSON")
                 logger.error(f"响应内容: {response.text}")
                 return False
 
             if result.get('ok'):
-                logger.info("Telegram 消息发送成功（纯文本）")
+                logger.info("Telegram 消息发送Succeeded（纯文本）")
                 return True
 
-            logger.error("Telegram 纯文本回退失败: Telegram API 返回 ok=false")
+            logger.error("Telegram 纯文本回退Failed: Telegram API 返回 ok=false")
             logger.error(f"响应内容: {response.text}")
             return False
 
-        logger.error(f"Telegram 纯文本回退失败: HTTP {response.status_code}")
+        logger.error(f"Telegram 纯文本回退Failed: HTTP {response.status_code}")
         logger.error(f"响应内容: {response.text}")
         return False
     
@@ -255,9 +255,9 @@ class TelegramSender:
             files = {"photo": ("report.png", image_bytes, "image/png")}
             response = requests.post(api_url, data=data, files=files, timeout=30)
             if response.status_code == 200 and response.json().get('ok'):
-                logger.info("Telegram 图片发送成功")
+                logger.info("Telegram 图片发送Succeeded")
                 return True
-            logger.error("Telegram 图片发送失败: %s", response.text[:200])
+            logger.error("Telegram 图片发送Failed: %s", response.text[:200])
             return False
         except Exception as e:
             logger.error("Telegram 图片发送异常: %s", e)

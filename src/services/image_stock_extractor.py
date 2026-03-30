@@ -1,10 +1,10 @@
 # -*- coding: utf-8 -*-
 """
 ===================================
-图片股票代码提取 (Vision LLM)
+图片Stock code提取 (Vision LLM)
 ===================================
 
-从截图/图片中提取股票代码，使用 Vision LLM。
+从截图/图片中提取Stock code，使用 Vision LLM。
 优先级：Gemini -> Anthropic -> OpenAI（首个可用）。
 """
 
@@ -33,13 +33,13 @@ class _LiteLLMPlaceholder:
 # Keep a patchable module attribute while still avoiding a hard import at module load.
 litellm = sys.modules.get("litellm") or _LiteLLMPlaceholder()
 
-EXTRACT_PROMPT = """请分析这张股票市场截图或图片，提取其中所有可见的股票代码及名称。
+EXTRACT_PROMPT = """请分析这张股票市场截图或图片，提取其中所有可见的Stock code及名称。
 
-重要：若图中同时显示股票名称和代码（如自选股列表、ETF 列表），必须同时提取两者，每个元素必须包含 code 和 name 字段。
+重要：若图中同时显示Stock name和代码（如自选股列表、ETF 列表），必须同时提取两者，每个元素必须包含 code 和 name 字段。
 
 输出格式：仅返回有效的 JSON 数组，不要 markdown、不要解释。
-每个元素为对象：{"code":"股票代码","name":"股票名称","confidence":"high|medium|low"}
-- code: 必填，股票代码（A股6位、港股5位、美股1-5字母、ETF 如 159887/512880）
+每个元素为对象：{"code":"Stock code","name":"Stock name","confidence":"high|medium|low"}
+- code: 必填，Stock code（A股6位、港股5位、美股1-5字母、ETF 如 159887/512880）
 - name: 若图中有名称则必填（如 贵州茅台、银行ETF、证券ETF），与代码一一对应；仅当图中确实无名称时可省略
 - confidence: 必填，识别置信度，high=确定、medium=较确定、low=不确定
 
@@ -51,7 +51,7 @@ EXTRACT_PROMPT = """请分析这张股票市场截图或图片，提取其中所
 
 输出示例：[{"code":"600519","name":"贵州茅台","confidence":"high"},{"code":"159887","name":"银行ETF","confidence":"high"}]
 
-禁止只返回代码数组如 ["159887","512880"]，必须使用对象格式。若未找到任何股票代码，返回：[]"""
+禁止只返回代码数组如 ["159887","512880"]，必须使用对象格式。若Not found任何Stock code，返回：[]"""
 
 # Valid confidence values; invalid ones normalized to medium
 _VALID_CONFIDENCE = frozenset({"high", "medium", "low"})
@@ -109,7 +109,7 @@ def _normalize_code(raw: str) -> Optional[str]:
 
 
 def _parse_codes_from_text(text: str) -> List[str]:
-    """从 LLM 响应文本解析股票代码（legacy format）。"""
+    """从 LLM 响应文本解析Stock code（legacy format）。"""
     seen: set[str] = set()
     result: List[str] = []
 
@@ -287,7 +287,7 @@ def extract_stock_codes_from_image(
     mime_type: str,
 ) -> Tuple[List[Tuple[str, Optional[str], str]], str]:
     """
-    从图片中提取股票代码及名称（使用 Vision LLM）。
+    从图片中提取Stock code及名称（使用 Vision LLM）。
 
     优先级：Gemini -> Anthropic -> OpenAI（首个可用）。
     支持多 Key 轮询与重试（最多 3 次，指数退避）。
@@ -300,7 +300,7 @@ def extract_stock_codes_from_image(
         (items, raw_text) - items 为 [(code, name?, confidence), ...]，raw_text 为原始 LLM 响应。
 
     Raises:
-        ValueError: 图片无效、未配置 Vision API 或提取失败时。
+        ValueError: 图片无效、未配置 Vision API 或提取Failed时。
     """
     mime_type = (mime_type or "image/jpeg").strip().lower().split(";")[0].strip()
     if mime_type not in ALLOWED_MIME:
@@ -334,9 +334,9 @@ def extract_stock_codes_from_image(
             last_error = e
             if attempt < 2:
                 delay = 2 ** attempt
-                logger.warning(f"[ImageExtractor] 尝试 {attempt + 1}/3 失败，{delay}s 后重试: {e}")
+                logger.warning(f"[ImageExtractor] 尝试 {attempt + 1}/3 Failed，{delay}s 后重试: {e}")
                 time.sleep(delay)
 
     raise ValueError(
-        f"Vision API 调用失败，请检查 API Key 与网络: {last_error}"
+        f"Vision API 调用Failed，请检查 API Key 与网络: {last_error}"
     ) from last_error

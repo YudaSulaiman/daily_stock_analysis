@@ -91,7 +91,7 @@ class DingtalkPlatform(BotPlatform):
         expected_sign = base64.b64encode(hmac_code).decode('utf-8')
         
         if sign != expected_sign:
-            logger.warning(f"[DingTalk] 签名验证失败")
+            logger.warning(f"[DingTalk] 签名验证Failed")
             return False
         
         return True
@@ -253,11 +253,11 @@ class DingtalkPlatform(BotPlatform):
         
         Args:
             session_webhook: 钉钉提供的会话 Webhook URL
-            response: 响应对象
+            response: Response object
             message: 原始消息对象
             
         Returns:
-            是否发送成功
+            是否发送Succeeded
         """
         if not session_webhook:
             logger.warning("[DingTalk] 没有可用的 sessionWebhook")
@@ -300,13 +300,13 @@ class DingtalkPlatform(BotPlatform):
             if resp.status_code == 200:
                 result = resp.json()
                 if result.get('errcode') == 0:
-                    logger.info("[DingTalk] sessionWebhook 发送成功")
+                    logger.info("[DingTalk] sessionWebhook 发送Succeeded")
                     return True
                 else:
-                    logger.error(f"[DingTalk] sessionWebhook 发送失败: {result}")
+                    logger.error(f"[DingTalk] sessionWebhook 发送Failed: {result}")
                     return False
             else:
-                logger.error(f"[DingTalk] sessionWebhook 请求失败: {resp.status_code}")
+                logger.error(f"[DingTalk] sessionWebhook 请求Failed: {resp.status_code}")
                 return False
                 
         except Exception as e:

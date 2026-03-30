@@ -1,12 +1,12 @@
 # -*- coding: utf-8 -*-
 """
 ===================================
-历史记录接口
+History Records Endpoint
 ===================================
 
-职责：
-1. 提供 GET /api/v1/history 历史列表查询接口
-2. 提供 GET /api/v1/history/{query_id} 历史详情查询接口
+Responsibilities:
+1. 提供 GET /api/v1/history 历史列表Query接口
+2. 提供 GET /api/v1/history/{query_id} 历史详情Query接口
 """
 
 import logging
@@ -54,35 +54,35 @@ router = APIRouter()
     "",
     response_model=HistoryListResponse,
     responses={
-        200: {"description": "历史记录列表"},
-        500: {"description": "服务器错误", "model": ErrorResponse},
+        200: {"description": "History records list"},
+        500: {"description": "Server error", "model": ErrorResponse},
     },
-    summary="获取历史分析列表",
-    description="分页获取历史分析记录摘要，支持按股票代码和日期范围筛选"
+    summary="Get analysis history list",
+    description="Get paginated analysis history summaries with stock code and date range filtering"
 )
 def get_history_list(
-    stock_code: Optional[str] = Query(None, description="股票代码筛选"),
-    start_date: Optional[str] = Query(None, description="开始日期 (YYYY-MM-DD)"),
-    end_date: Optional[str] = Query(None, description="结束日期 (YYYY-MM-DD)"),
-    page: int = Query(1, ge=1, description="页码（从 1 开始）"),
-    limit: int = Query(20, ge=1, le=100, description="每页数量"),
+    stock_code: Optional[str] = Query(None, description="Stock code filter"),
+    start_date: Optional[str] = Query(None, description="Start date (YYYY-MM-DD)"),
+    end_date: Optional[str] = Query(None, description="End date (YYYY-MM-DD)"),
+    page: int = Query(1, ge=1, description="Page number（从 1 Started）"),
+    limit: int = Query(20, ge=1, le=100, description="Items per page"),
     db_manager: DatabaseManager = Depends(get_database_manager)
 ) -> HistoryListResponse:
     """
-    获取历史分析列表
+    Get analysis history list
     
-    分页获取历史分析记录摘要，支持按股票代码和日期范围筛选
+    Get paginated analysis history summaries with stock code and date range filtering
     
     Args:
-        stock_code: 股票代码筛选
-        start_date: 开始日期
-        end_date: 结束日期
-        page: 页码
-        limit: 每页数量
-        db_manager: 数据库管理器依赖
+        stock_code: Stock code filter
+        start_date: Start date
+        end_date: End date
+        page: Page number
+        limit: Items per page
+        db_manager: Database manager dependency
         
     Returns:
-        HistoryListResponse: 历史记录列表
+        HistoryListResponse: History records list
     """
     try:
         service = HistoryService(db_manager)
@@ -119,12 +119,12 @@ def get_history_list(
         )
         
     except Exception as e:
-        logger.error(f"查询历史列表失败: {e}", exc_info=True)
+        logger.error(f"Query历史列表Failed: {e}", exc_info=True)
         raise HTTPException(
             status_code=500,
             detail={
                 "error": "internal_error",
-                "message": f"查询历史列表失败: {str(e)}"
+                "message": f"Query历史列表Failed: {str(e)}"
             }
         )
 
@@ -133,9 +133,9 @@ def get_history_list(
     "",
     response_model=DeleteHistoryResponse,
     responses={
-        200: {"description": "删除成功"},
-        400: {"description": "请求参数错误", "model": ErrorResponse},
-        500: {"description": "服务器错误", "model": ErrorResponse},
+        200: {"description": "删除Succeeded"},
+        400: {"description": "Invalid request parameters", "model": ErrorResponse},
+        500: {"description": "Server error", "model": ErrorResponse},
     },
     summary="删除历史分析记录",
     description="按历史记录主键 ID 批量删除分析历史"
@@ -164,12 +164,12 @@ def delete_history_records(
     except HTTPException:
         raise
     except Exception as e:
-        logger.error(f"删除历史记录失败: {e}", exc_info=True)
+        logger.error(f"删除历史记录Failed: {e}", exc_info=True)
         raise HTTPException(
             status_code=500,
             detail={
                 "error": "internal_error",
-                "message": f"删除历史记录失败: {str(e)}"
+                "message": f"删除历史记录Failed: {str(e)}"
             }
         )
 
@@ -179,8 +179,8 @@ def delete_history_records(
     response_model=AnalysisReport,
     responses={
         200: {"description": "报告详情"},
-        404: {"description": "报告不存在", "model": ErrorResponse},
-        500: {"description": "服务器错误", "model": ErrorResponse},
+        404: {"description": "报告Does not exist", "model": ErrorResponse},
+        500: {"description": "Server error", "model": ErrorResponse},
     },
     summary="获取历史报告详情",
     description="根据分析历史记录 ID 或 query_id 获取完整的历史分析报告"
@@ -193,17 +193,17 @@ def get_history_detail(
     获取历史报告详情
     
     根据分析历史记录主键 ID 或 query_id 获取完整的历史分析报告。
-    优先尝试按主键 ID（整数）查询，若参数不是合法整数则按 query_id 查询。
+    优先尝试按主键 ID（整数）Query，若参数不是合法整数则按 query_id Query。
     
     Args:
         record_id: 分析历史记录主键 ID（整数）或 query_id（字符串）
-        db_manager: 数据库管理器依赖
+        db_manager: Database manager dependency
         
     Returns:
         AnalysisReport: 完整分析报告
         
     Raises:
-        HTTPException: 404 - 报告不存在
+        HTTPException: 404 - 报告Does not exist
     """
     try:
         service = HistoryService(db_manager)
@@ -216,7 +216,7 @@ def get_history_detail(
                 status_code=404,
                 detail={
                     "error": "not_found",
-                    "message": f"未找到 id/query_id={record_id} 的分析记录"
+                    "message": f"Not found id/query_id={record_id} 的分析记录"
                 }
             )
         
@@ -327,12 +327,12 @@ def get_history_detail(
     except HTTPException:
         raise
     except Exception as e:
-        logger.error(f"查询历史详情失败: {e}", exc_info=True)
+        logger.error(f"Query历史详情Failed: {e}", exc_info=True)
         raise HTTPException(
             status_code=500,
             detail={
                 "error": "internal_error",
-                "message": f"查询历史详情失败: {str(e)}"
+                "message": f"Query历史详情Failed: {str(e)}"
             }
         )
 
@@ -342,7 +342,7 @@ def get_history_detail(
     response_model=NewsIntelResponse,
     responses={
         200: {"description": "新闻情报列表"},
-        500: {"description": "服务器错误", "model": ErrorResponse},
+        500: {"description": "Server error", "model": ErrorResponse},
     },
     summary="获取历史报告关联新闻",
     description="根据分析历史记录 ID 获取关联的新闻情报列表（为空也返回 200）"
@@ -356,12 +356,12 @@ def get_history_news(
     获取历史报告关联新闻
 
     根据分析历史记录 ID 或 query_id 获取关联的新闻情报列表。
-    在内部完成 record_id → query_id 的解析。
+    在内部Completed record_id → query_id 的解析。
 
     Args:
         record_id: 分析历史记录主键 ID（整数）或 query_id（字符串）
         limit: 返回数量限制
-        db_manager: 数据库管理器依赖
+        db_manager: Database manager dependency
 
     Returns:
         NewsIntelResponse: 新闻情报列表
@@ -385,12 +385,12 @@ def get_history_news(
         )
 
     except Exception as e:
-        logger.error(f"查询新闻情报失败: {e}", exc_info=True)
+        logger.error(f"Query新闻情报Failed: {e}", exc_info=True)
         raise HTTPException(
             status_code=500,
             detail={
                 "error": "internal_error",
-                "message": f"查询新闻情报失败: {str(e)}"
+                "message": f"Query新闻情报Failed: {str(e)}"
             }
         )
 
@@ -400,8 +400,8 @@ def get_history_news(
     response_model=MarkdownReportResponse,
     responses={
         200: {"description": "Markdown 格式报告"},
-        404: {"description": "报告不存在", "model": ErrorResponse},
-        500: {"description": "服务器错误", "model": ErrorResponse},
+        404: {"description": "报告Does not exist", "model": ErrorResponse},
+        500: {"description": "Server error", "model": ErrorResponse},
     },
     summary="获取历史报告 Markdown 格式",
     description="根据分析历史记录 ID 获取 Markdown 格式的完整分析报告"
@@ -417,14 +417,14 @@ def get_history_markdown(
 
     Args:
         record_id: 分析历史记录主键 ID（整数）或 query_id（字符串）
-        db_manager: 数据库管理器依赖
+        db_manager: Database manager dependency
 
     Returns:
         MarkdownReportResponse: Markdown 格式的完整报告
 
     Raises:
-        HTTPException: 404 - 报告不存在
-        HTTPException: 500 - 报告生成失败（服务器内部错误）
+        HTTPException: 404 - 报告Does not exist
+        HTTPException: 500 - 报告生成Failed（Internal server error）
     """
     service = HistoryService(db_manager)
 
@@ -436,16 +436,16 @@ def get_history_markdown(
             status_code=500,
             detail={
                 "error": "generation_failed",
-                "message": f"生成 Markdown 报告失败: {e.message}"
+                "message": f"生成 Markdown 报告Failed: {e.message}"
             }
         )
     except Exception as e:
-        logger.error(f"获取 Markdown 报告失败: {e}", exc_info=True)
+        logger.error(f"获取 Markdown 报告Failed: {e}", exc_info=True)
         raise HTTPException(
             status_code=500,
             detail={
                 "error": "internal_error",
-                "message": f"获取 Markdown 报告失败: {str(e)}"
+                "message": f"获取 Markdown 报告Failed: {str(e)}"
             }
         )
 
@@ -454,7 +454,7 @@ def get_history_markdown(
             status_code=404,
             detail={
                 "error": "not_found",
-                "message": f"未找到 id/query_id={record_id} 的分析记录"
+                "message": f"Not found id/query_id={record_id} 的分析记录"
             }
         )
 

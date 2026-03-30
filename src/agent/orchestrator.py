@@ -135,7 +135,7 @@ class AgentOrchestrator:
             if parse_dashboard and dashboard is not None:
                 dashboard = self._mark_partial_dashboard(
                     dashboard,
-                    note="多 Agent 超时，以下结论基于已完成阶段自动降级生成。",
+                    note="多 Agent 超时，以下结论基于已Completed阶段自动降级生成。",
                 )
                 ctx.set_data("final_dashboard", dashboard)
                 content = json.dumps(dashboard, ensure_ascii=False, indent=2)
@@ -335,7 +335,7 @@ class AgentOrchestrator:
         else:
             conversation_manager.add_message(
                 session_id, "assistant",
-                f"[分析失败] {orch_result.error or '未知错误'}",
+                f"[Analysis failed] {orch_result.error or '未知错误'}",
             )
 
         return AgentResult(
