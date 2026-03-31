@@ -1144,7 +1144,7 @@ _FIELD_DEFINITIONS: Dict[str, Dict[str, Any]] = {
         "is_sensitive": False,
         "is_required": False,
         "is_editable": True,
-        "default_value": "zh",
+        "default_value": "en",
         "options": [
             {"label": "Chinese", "value": "zh"},
             {"label": "English", "value": "en"},
