@@ -24,6 +24,7 @@ from src.search_service import SearchService
 from src.core.market_profile import get_profile, MarketProfile
 from src.core.market_strategy import get_market_strategy_blueprint
 from data_provider.base import DataFetcherManager
+from src.report_language import normalize_report_language
 
 logger = logging.getLogger(__name__)
 
@@ -485,28 +486,39 @@ Focus on index trend, liquidity, and sector rotation to shape the next-session t
 
     def _build_stats_block(self, overview: MarketOverview) -> str:
         """Build market statistics block."""
+        report_lang = normalize_report_language(getattr(self.config, "report_language", "zh"))
         has_stats = overview.up_count or overview.down_count or overview.total_amount
         if not has_stats:
             return ""
-        if self._get_review_language() == "en":
-            return (
-                f"> 📈 Advancers **{overview.up_count}** / Decliners **{overview.down_count}** / "
+        if report_lang == "en":
+            lines = [
+                f"> 📈 Up **{overview.up_count}** / Down **{overview.down_count}** / "
                 f"Flat **{overview.flat_count}** | "
-                f"Limit-up **{overview.limit_up_count}** / Limit-down **{overview.limit_down_count}** | "
-                f"Turnover **{overview.total_amount:.0f}** ({self._get_turnover_unit_label()})"
-            )
-        lines = [
-            f"> 📈 上涨 **{overview.up_count}** 家 / 下跌 **{overview.down_count}** 家 / "
-            f"平盘 **{overview.flat_count}** 家 | "
-            f"涨停 **{overview.limit_up_count}** / 跌停 **{overview.limit_down_count}** | "
-            f"成交额 **{overview.total_amount:.0f}** 亿"
-        ]
+                f"Limit Up **{overview.limit_up_count}** / Limit Down **{overview.limit_down_count}** | "
+                f"Vol **{overview.total_amount:.0f}** 100M"
+            ]
+        else:
+            lines = [
+                f"> 📈 上涨 **{overview.up_count}** 家 / 下跌 **{overview.down_count}** 家 / "
+                f"平盘 **{overview.flat_count}** 家 | "
+                f"涨停 **{overview.limit_up_count}** / 跌停 **{overview.limit_down_count}** | "
+                f"成交额 **{overview.total_amount:.0f}** 亿"
+            ]
         return "\n".join(lines)
 
     def _build_indices_block(self, overview: MarketOverview) -> str:
         """构建指数行情表格（不含振幅）"""
+        report_lang = normalize_report_language(getattr(self.config, "report_language", "zh"))
         if not overview.indices:
             return ""
+        if report_lang == "en":
+            lines = [
+                "| Index | Last | Change | Vol(100M) |",
+                "|------|------|--------|-----------|"]
+        else:
+            lines = [
+                "| 指数 | 最新 | 涨跌幅 | 成交额(亿) |",
+                "|------|------|--------|-----------|"]
         if self._get_review_language() == "en":
             lines = [
                 f"| Index | Last | Change % | Turnover ({self._get_turnover_unit_label()}) |",
@@ -526,6 +538,7 @@ Focus on index trend, liquidity, and sector rotation to shape the next-session t
 
     def _build_sector_block(self, overview: MarketOverview) -> str:
         """Build sector ranking block."""
+        report_lang = normalize_report_language(getattr(self.config, "report_language", "zh"))
         if not overview.top_sectors and not overview.bottom_sectors:
             return ""
         lines = []
@@ -533,6 +546,8 @@ Focus on index trend, liquidity, and sector rotation to shape the next-session t
             top = " | ".join(
                 [f"**{s['name']}**({s['change_pct']:+.2f}%)" for s in overview.top_sectors[:5]]
             )
+            prefix = "> 🔥 Leading:" if report_lang == "en" else "> 🔥 领涨:"
+            lines.append(f"{prefix} {top}")
             if self._get_review_language() == "en":
                 lines.append(f"> 🔥 Leaders: {top}")
             else:
@@ -541,6 +556,8 @@ Focus on index trend, liquidity, and sector rotation to shape the next-session t
             bot = " | ".join(
                 [f"**{s['name']}**({s['change_pct']:+.2f}%)" for s in overview.bottom_sectors[:5]]
             )
+            prefix = "> 💧 Lagging:" if report_lang == "en" else "> 💧 领跌:"
+            lines.append(f"{prefix} {bot}")
             if self._get_review_language() == "en":
                 lines.append(f"> 💧 Laggards: {bot}")
             else:
@@ -549,6 +566,9 @@ Focus on index trend, liquidity, and sector rotation to shape the next-session t
 
     def _build_review_prompt(self, overview: MarketOverview, news: List) -> str:
         """构建复盘报告 Prompt"""
+        report_lang = normalize_report_language(getattr(self.config, "report_language", "zh"))
+        is_en = (report_lang == "en")
+
         review_language = self._get_review_language()
 
         # 指数行情信息（简洁格式，不用emoji）
@@ -578,54 +598,54 @@ Focus on index trend, liquidity, and sector rotation to shape the next-session t
         sector_block = ""
         if review_language == "en":
             if self.profile.has_market_stats:
-                stats_block = f"""## Market Breadth
-- Advancers: {overview.up_count} | Decliners: {overview.down_count} | Flat: {overview.flat_count}
-- Limit-up: {overview.limit_up_count} | Limit-down: {overview.limit_down_count}
-- Turnover: {overview.total_amount:.0f} ({self._get_turnover_unit_label()})"""
-            else:
-                stats_block = "## Market Breadth\n(No equivalent advance/decline statistics are available for this market.)"
-
-            if self.profile.has_sector_rankings:
-                sector_block = f"""## Sector Performance
-Leading: {top_sectors_text if top_sectors_text else "N/A"}
-Lagging: {bottom_sectors_text if bottom_sectors_text else "N/A"}"""
-            else:
-                sector_block = "## Sector Performance\n(US sector data not available.)"
-        else:
-            if self.profile.has_market_stats:
-                stats_block = f"""## 市场概况
+                stats_block = f"""## Market Overview
+- Up: {overview.up_count} | Down: {overview.down_count} | Flat: {overview.flat_count}
+- Limit up: {overview.limit_up_count} | Limit down: {overview.limit_down_count}
+- Total volume: {overview.total_amount:.0f}""" if is_en else f"""## 市场概况
 - 上涨: {overview.up_count} 家 | 下跌: {overview.down_count} 家 | 平盘: {overview.flat_count} 家
 - 涨停: {overview.limit_up_count} 家 | 跌停: {overview.limit_down_count} 家
 - 两市成交额: {overview.total_amount:.0f} 亿元"""
             else:
-                stats_block = "## 市场概况\n（美股暂无涨跌家数等统计）"
+                stats_block = "## Market Overview\n(US market has no equivalent advance/decline stats.)" if is_en else "## 市场概况\n（美股暂无涨跌家数等统计）"
 
             if self.profile.has_sector_rankings:
-                sector_block = f"""## 板块表现
+                sector_block = f"""## Sector Performance
+Leading: {top_sectors_text if top_sectors_text else "N/A"}
+Lagging: {bottom_sectors_text if bottom_sectors_text else "N/A"}""" if is_en else f"""## 板块表现
 领涨: {top_sectors_text if top_sectors_text else "暂无数据"}
 领跌: {bottom_sectors_text if bottom_sectors_text else "暂无数据"}"""
             else:
-                sector_block = "## 板块表现\n（美股暂无板块涨跌数据）"
+                sector_block = "## Sector Performance\n(US sector data not available.)" if is_en else "## 板块表现\n（美股暂无板块涨跌数据）"
+        else: # CN region
+            if self.profile.has_market_stats:
+                stats_block = f"""## Market Overview
+- Up: {overview.up_count} | Down: {overview.down_count} | Flat: {overview.flat_count}
+- Limit up: {overview.limit_up_count} | Limit down: {overview.limit_down_count}
+- Total volume (CNY 100M): {overview.total_amount:.0f}""" if is_en else f"""## 市场概况
+- 上涨: {overview.up_count} 家 | 下跌: {overview.down_count} 家 | 平盘: {overview.flat_count} 家
+- 涨停: {overview.limit_up_count} 家 | 跌停: {overview.limit_down_count} 家
+- 两市成交额: {overview.total_amount:.0f} 亿元"""
+            else:
+                stats_block = "## Market Overview\n(A-share market has no equivalent advance/decline stats.)" if is_en else "## 市场概况\n（A股暂无涨跌家数等统计）"
 
-        data_no_indices_hint = (
-            "注意：由于行情数据获取Failed，请主要根据【市场新闻】进行定性分析和总结，不要编造具体的指数点位。"
-            if not indices_text
-            else ""
-        )
-        if review_language == "en":
-            data_no_indices_hint = (
-                "Note: Market data fetch failed. Rely mainly on [Market News] for qualitative analysis. Do not invent index levels."
-                if not indices_text
-                else ""
-            )
-            indices_placeholder = indices_text if indices_text else "No index data (API error)"
-            news_placeholder = news_text if news_text else "No relevant news"
-        else:
-            indices_placeholder = indices_text if indices_text else "暂无指数数据（接口异常）"
-            news_placeholder = news_text if news_text else "暂无相关新闻"
+            if self.profile.has_sector_rankings:
+                sector_block = f"""## Sector Performance
+Leading: {top_sectors_text if top_sectors_text else "N/A"}
+Lagging: {bottom_sectors_text if bottom_sectors_text else "N/A"}""" if is_en else f"""## 板块表现
+领涨: {top_sectors_text if top_sectors_text else "暂无数据"}
+领跌: {bottom_sectors_text if bottom_sectors_text else "暂无数据"}"""
+            else:
+                sector_block = "## Sector Performance\n(A-share sector data not available.)" if is_en else "## 板块表现\n（A股暂无板块涨跌数据）"
 
-        if review_language == "en":
-            report_title = self._get_review_title(overview.date).removeprefix("## ").strip()
+        data_no_indices_hint = ""
+        if not indices_text:
+            data_no_indices_hint = "Note: Market data fetch failed. Rely mainly on [Market News] for qualitative analysis. Do not invent index levels." if is_en else "注意：由于行情数据获取Failed，请主要根据【市场新闻】进行定性分析和总结，不要编造具体的指数点位。"
+
+        indices_placeholder = indices_text if indices_text else ("No index data (API error)" if is_en else "暂无指数数据（接口异常）")
+        news_placeholder = news_text if news_text else ("No relevant news" if is_en else "暂无相关新闻")
+
+        # Build prompt depending ONLY on report_language for output format
+        if is_en:
             return f"""You are a professional US/A/H market analyst. Please produce a concise market recap report based on the data below.
 
 [Requirements]
@@ -634,6 +654,7 @@ Lagging: {bottom_sectors_text if bottom_sectors_text else "N/A"}"""
 - No code blocks
 - Use emoji sparingly in headings (at most one per heading)
 - The entire fixed shell, headings, guidance, and conclusion must be in English
+- VERY IMPORTANT: Must output everything in English. Do not write Chinese sentences!
 
 ---
 
@@ -660,7 +681,7 @@ Lagging: {bottom_sectors_text if bottom_sectors_text else "N/A"}"""
 
 # Output Template (follow this structure)
 
-## {report_title}
+## {overview.date} Market Recap
 
 ### 1. Market Summary
 (2-3 sentences summarizing overall market tone, index moves, and liquidity.)
@@ -685,11 +706,10 @@ Lagging: {bottom_sectors_text if bottom_sectors_text else "N/A"}"""
 
 ---
 
-Output the report content directly, no extra commentary.
+Output the report content directly, no extra commentary (in English).
 """
-
-        # A 股场景使用中文提示语
-        return f"""你是一位专业的A/H/美股市场分析师，请根据以下数据生成一份简洁的Market review报告。
+        else:
+            return f"""你是一位专业的A/H/美股市场分析师，请根据以下数据生成一份简洁的Market review报告。
 
 【重要】输出要求：
 - 必须输出纯 Markdown 文本格式
@@ -753,6 +773,9 @@ Output the report content directly, no extra commentary.
     def _generate_template_review(self, overview: MarketOverview, news: List) -> str:
         """使用模板生成复盘报告（无大模型时的备选方案）"""
         template_language = self._get_template_review_language()
+        report_lang = normalize_report_language(getattr(self.config, "report_language", "zh"))
+        is_en = (report_lang == "en")
+        
         mood_code = self.profile.mood_index_code
         # 根据 mood_index_code 查找对应指数
         # cn: mood_code="000001"，idx.code 可能为 "sh000001"（以 mood_code 结尾）
@@ -830,7 +853,19 @@ Market conditions can change quickly. The data above is for reference only and d
 
         stats_section = ""
         if self.profile.has_market_stats:
-            stats_section = f"""
+            if is_en:
+                stats_section = f"""
+### 3. Market Stats
+| Indicator | Value |
+|------|------|
+| Up | {overview.up_count} |
+| Down | {overview.down_count} |
+| Limit Up | {overview.limit_up_count} |
+| Limit Down | {overview.limit_down_count} |
+| Total Vol | {overview.total_amount:.0f} 100M |
+"""
+            else:
+                stats_section = f"""
 ### 三、涨跌统计
 | 指标 | 数值 |
 |------|------|
@@ -842,14 +877,41 @@ Market conditions can change quickly. The data above is for reference only and d
 """
         sector_section = ""
         if self.profile.has_sector_rankings and (top_text or bottom_text):
-            sector_section = f"""
+            if is_en:
+               sector_section = f"""
+### 4. Sector Performance
+- **Leaders**: {top_text}
+- **Laggards**: {bottom_text}
+"""
+            else:
+               sector_section = f"""
 ### 四、板块表现
 - **领涨**: {top_text}
 - **领跌**: {bottom_text}
 """
-        market_label = "A股" if self.region == "cn" else "美股"
-        strategy_summary = self._get_strategy_markdown_block(template_language)
-        return f"""## {overview.date} Market review
+        market_label = ("China A-Share" if self.region == "cn" else "US") if is_en else ("A股" if self.region == "cn" else "美股")
+        strategy_summary = self.strategy.to_markdown_block()
+        
+        if is_en:
+            report = f"""## {overview.date} {market_label} Market Recap
+
+### 1. Market Summary
+The {market_label} market showed a **{market_mood}** trend today.
+
+### 2. Major Indices
+{indices_text}
+{stats_section}
+{sector_section}
+### 5. Risk Warning
+Investment carries risks. The above data is for reference only and does not constitute investment advice.
+
+{strategy_summary}
+
+---
+*Generated at: {datetime.now().strftime('%H:%M')}*
+"""
+        else:
+            report = f"""## {overview.date} Market review
 
 ### 一、市场总结
 今日{market_label}市场整体呈现**{market_mood}**态势。
