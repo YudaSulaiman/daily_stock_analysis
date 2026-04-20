@@ -12,7 +12,7 @@ from typing import Any, Dict, List, Optional
 
 from src.config import AGENT_MAX_STEPS_DEFAULT
 
-SCHEMA_VERSION = "2026-03-29"
+SCHEMA_VERSION = "2026-04-20"
 
 _CATEGORY_DEFINITIONS: List[Dict[str, Any]] = [
     {
@@ -329,7 +329,7 @@ _FIELD_DEFINITIONS: Dict[str, Dict[str, Any]] = {
     },
     "TAVILY_API_KEYS": {
         "title": "Tavily API Keys",
-        "description": "Comma-separated Tavily API keys.",
+        "description": "Primary comma-separated Tavily API keys. Alternates daily with TAVILY_ALTERNATIVE_API_KEYS when both are configured.",
         "category": "data_source",
         "data_type": "string",
         "ui_control": "password",
@@ -340,6 +340,20 @@ _FIELD_DEFINITIONS: Dict[str, Dict[str, Any]] = {
         "options": [],
         "validation": {"multi_value": True, "delimiter": ","},
         "display_order": 30,
+    },
+    "TAVILY_ALTERNATIVE_API_KEYS": {
+        "title": "Tavily Alternative API Keys",
+        "description": "Secondary comma-separated Tavily API keys",
+        "category": "data_source",
+        "data_type": "string",
+        "ui_control": "password",
+        "is_sensitive": True,
+        "is_required": False,
+        "is_editable": True,
+        "default_value": None,
+        "options": [],
+        "validation": {"multi_value": True, "delimiter": ","},
+        "display_order": 31,
     },
     "SERPAPI_API_KEYS": {
         "title": "SerpAPI Keys",
