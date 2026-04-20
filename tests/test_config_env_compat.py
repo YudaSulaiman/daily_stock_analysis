@@ -4,6 +4,7 @@
 import os
 import tempfile
 import unittest
+from datetime import date as calendar_date
 from pathlib import Path
 from unittest.mock import patch
 
@@ -619,6 +620,43 @@ class ConfigEnvCompatibilityTestCase(unittest.TestCase):
                 config = Config._load_from_env()
 
         self.assertEqual(config.report_language, "en")
+
+    @patch("src.config.setup_env")
+    @patch.object(Config, "_parse_litellm_yaml", return_value=[])
+    def test_tavily_api_keys_alternate_to_alternative_group_on_even_day(
+        self,
+        _mock_parse_yaml,
+        _mock_setup_env,
+    ) -> None:
+        env = {
+            "TAVILY_API_KEYS": "primary-1,primary-2",
+            "TAVILY_ALTERNATIVE_API_KEYS": "alt-1,alt-2",
+        }
+
+        with patch.dict(os.environ, env, clear=True):
+            with patch("src.config.date") as mock_date:
+                mock_date.today.return_value = calendar_date(2026, 4, 20)
+                config = Config._load_from_env()
+
+        self.assertEqual(config.tavily_api_keys, ["alt-1", "alt-2"])
+
+    @patch("src.config.setup_env")
+    @patch.object(Config, "_parse_litellm_yaml", return_value=[])
+    def test_tavily_api_keys_fall_back_to_primary_group_when_alternative_is_missing(
+        self,
+        _mock_parse_yaml,
+        _mock_setup_env,
+    ) -> None:
+        env = {
+            "TAVILY_API_KEYS": "primary-1,primary-2",
+        }
+
+        with patch.dict(os.environ, env, clear=True):
+            with patch("src.config.date") as mock_date:
+                mock_date.today.return_value = calendar_date(2026, 4, 20)
+                config = Config._load_from_env()
+
+        self.assertEqual(config.tavily_api_keys, ["primary-1", "primary-2"])
 
     @patch("src.config.setup_env")
     @patch.object(Config, "_parse_litellm_yaml", return_value=[])
