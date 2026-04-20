@@ -14,6 +14,7 @@ import json
 import logging
 import os
 import re
+from datetime import date
 from pathlib import Path
 from typing import Any, Dict, List, Literal, Optional, Tuple
 from urllib.parse import urlparse
@@ -158,6 +159,32 @@ def parse_env_float(
         parsed = maximum
     return parsed
 
+def parse_csv_env_list(value: Optional[str]) -> List[str]:
+    """Parse a comma-separated env value into a trimmed list."""
+    return [item.strip() for item in (value or "").split(",") if item.strip()]
+
+def resolve_alternating_api_keys(
+    primary_env: str,
+    alternative_env: str,
+    *,
+    today: Optional[date] = None,
+)-> List[str]:
+    """Alternate between primary and alternative API key sets each day.
+
+    Odd ordinal dates prefer the primary set; even ordinal dates prefer the
+    alternative set. When the preferred set is empty, gracefully fall back to
+    the other set so partially configured environments still work.
+    """
+    primary_keys = parse_csv_env_list(os.getenv(primary_env))
+    alternative_keys = parse_csv_env_list(os.getenv(alternative_env))
+    
+    if not alternative_keys:
+        return primary_keys
+    if not primary_keys:
+         return alternative_keys
+    
+    day = today or date.today()
+    return primary_keys if day.toordinal() % 2 == 1 else alternative_keys
 
 def normalize_news_strategy_profile(value: Optional[str]) -> str:
     """Normalize news strategy profile to known values."""
@@ -499,13 +526,16 @@ class Config:
     vision_provider_priority: str = "gemini,anthropic,openai"
 
     # === 搜索引擎配置（支持多 Key 负载均衡）===
-    anspire_api_keys: List[str] = field(default_factory=list)  # Anspire Search API Keys
-    bocha_api_keys: List[str] = field(default_factory=list)  # Bocha API Keys
-    minimax_api_keys: List[str] = field(default_factory=list)  # MiniMax API Keys
-    tavily_api_keys: List[str] = field(default_factory=list)  # Tavily API Keys
-    brave_api_keys: List[str] = field(default_factory=list)  # Brave Search API Keys
-    serpapi_keys: List[str] = field(default_factory=list)  # SerpAPI Keys
-    searxng_base_urls: List[str] = field(default_factory=list)  # SearXNG instance URLs (self-hosted, no quota)
+    anspire_api_keys = parse_csv_env_list(os.getenv('ANSPIRE_API_KEYS'))  # Anspire Search API Keys
+    bocha_api_keys = parse_csv_env_list(os.getenv('BOCHA_API_KEYS'))  # Bocha API Keys
+    minimax_api_keys = parse_csv_env_list(os.getenv('MINIMAX_API_KEYS'))  # MiniMax API Keys
+    tavily_api_keys = resolve_alternating_api_keys(
+        'TAVILY_API_KEYS',
+        'TAVILY_ALTERNATIVE_API_KEYS',
+    )  # Tavily API Keys
+    brave_api_keys = parse_csv_env_list(os.getenv('BRAVE_API_KEYS'))  # Brave Search API Keys
+    serpapi_keys = parse_csv_env_list(os.getenv('SERPAPI_API_KEYS'))  # SerpAPI Keys
+    searxng_base_urls = parse_csv_env_list(os.getenv('SEARXNG_BASE_URLS'))  # SearXNG instance URLs (self-hosted, no quota)
     searxng_public_instances_enabled: bool = True  # Auto-discover public SearXNG instances when base URLs are absent
 
     # === Social Sentiment (US stocks only, api.adanos.org) ===
