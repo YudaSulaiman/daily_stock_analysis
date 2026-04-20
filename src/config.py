@@ -14,6 +14,7 @@ import json
 import logging
 import os
 import re
+from datetime import date
 from pathlib import Path
 from typing import Any, Dict, List, Literal, Optional, Tuple
 from urllib.parse import unquote, urlparse
@@ -241,6 +242,32 @@ def parse_env_float(
         parsed = maximum
     return parsed
 
+def parse_csv_env_list(value: Optional[str]) -> List[str]:
+    """Parse a comma-separated env value into a trimmed list."""
+    return [item.strip() for item in (value or "").split(",") if item.strip()]
+
+def resolve_alternating_api_keys(
+    primary_env: str,
+    alternative_env: str,
+    *,
+    today: Optional[date] = None,
+)-> List[str]:
+    """Alternate between primary and alternative API key sets each day.
+
+    Odd ordinal dates prefer the primary set; even ordinal dates prefer the
+    alternative set. When the preferred set is empty, gracefully fall back to
+    the other set so partially configured environments still work.
+    """
+    primary_keys = parse_csv_env_list(os.getenv(primary_env))
+    alternative_keys = parse_csv_env_list(os.getenv(alternative_env))
+
+    if not alternative_keys:
+        return primary_keys
+    if not primary_keys:
+         return alternative_keys
+
+    day = today or date.today()
+    return primary_keys if day.toordinal() % 2 == 1 else alternative_keys
 
 def normalize_news_strategy_profile(value: Optional[str]) -> str:
     """Normalize news strategy profile to known values."""
@@ -1331,20 +1358,18 @@ class Config:
         )
 
         # 解析搜索引擎 API Keys（支持多个 key，逗号分隔）
-        bocha_keys_str = os.getenv('BOCHA_API_KEYS', '')
-        bocha_api_keys = [k.strip() for k in bocha_keys_str.split(',') if k.strip()]
+        bocha_api_keys = parse_csv_env_list(os.getenv('BOCHA_API_KEYS'))
 
-        minimax_keys_str = os.getenv('MINIMAX_API_KEYS', '')
-        minimax_api_keys = [k.strip() for k in minimax_keys_str.split(',') if k.strip()]
-        
-        tavily_keys_str = os.getenv('TAVILY_API_KEYS', '')
-        tavily_api_keys = [k.strip() for k in tavily_keys_str.split(',') if k.strip()]
-        
-        serpapi_keys_str = os.getenv('SERPAPI_API_KEYS', '')
-        serpapi_keys = [k.strip() for k in serpapi_keys_str.split(',') if k.strip()]
+        minimax_api_keys = parse_csv_env_list(os.getenv('MINIMAX_API_KEYS'))
 
-        brave_keys_str = os.getenv('BRAVE_API_KEYS', '')
-        brave_api_keys = [k.strip() for k in brave_keys_str.split(',') if k.strip()]
+        tavily_api_keys = resolve_alternating_api_keys(
+            'TAVILY_API_KEYS',
+            'TAVILY_ALTERNATIVE_API_KEYS',
+        )
+
+        serpapi_keys = parse_csv_env_list(os.getenv('SERPAPI_API_KEYS'))
+
+        brave_api_keys = parse_csv_env_list(os.getenv('BRAVE_API_KEYS'))
 
         _raw_urls = [u.strip() for u in os.getenv('SEARXNG_BASE_URLS', '').split(',') if u.strip()]
         searxng_base_urls = []
