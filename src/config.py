@@ -526,16 +526,13 @@ class Config:
     vision_provider_priority: str = "gemini,anthropic,openai"
 
     # === 搜索引擎配置（支持多 Key 负载均衡）===
-    anspire_api_keys = parse_csv_env_list(os.getenv('ANSPIRE_API_KEYS'))  # Anspire Search API Keys
-    bocha_api_keys = parse_csv_env_list(os.getenv('BOCHA_API_KEYS'))  # Bocha API Keys
-    minimax_api_keys = parse_csv_env_list(os.getenv('MINIMAX_API_KEYS'))  # MiniMax API Keys
-    tavily_api_keys = resolve_alternating_api_keys(
-        'TAVILY_API_KEYS',
-        'TAVILY_ALTERNATIVE_API_KEYS',
-    )  # Tavily API Keys
-    brave_api_keys = parse_csv_env_list(os.getenv('BRAVE_API_KEYS'))  # Brave Search API Keys
-    serpapi_keys = parse_csv_env_list(os.getenv('SERPAPI_API_KEYS'))  # SerpAPI Keys
-    searxng_base_urls = parse_csv_env_list(os.getenv('SEARXNG_BASE_URLS'))  # SearXNG instance URLs (self-hosted, no quota)
+    anspire_api_keys: List[str] = field(default_factory=list)  # Anspire Search API Keys
+    bocha_api_keys: List[str] = field(default_factory=list)  # Bocha API Keys
+    minimax_api_keys: List[str] = field(default_factory=list)  # MiniMax API Keys
+    tavily_api_keys: List[str] = field(default_factory=list)  # Tavily API Keys
+    brave_api_keys: List[str] = field(default_factory=list)  # Brave Search API Keys
+    serpapi_keys: List[str] = field(default_factory=list)  # SerpAPI Keys
+    searxng_base_urls: List[str] = field(default_factory=list)  # SearXNG instance URLs (self-hosted, no quota)
     searxng_public_instances_enabled: bool = True  # Auto-discover public SearXNG instances when base URLs are absent
 
     # === Social Sentiment (US stocks only, api.adanos.org) ===
@@ -1052,23 +1049,20 @@ class Config:
 
         # 解析搜索引擎 API Keys（支持多个 key，逗号分隔）
         # Anspire Search
-        anspire_keys_str = os.getenv('ANSPIRE_API_KEYS', '')
-        anspire_api_keys = [k.strip() for k in anspire_keys_str.split(',') if k.strip()]
+        anspire_api_keys = parse_csv_env_list(os.getenv('ANSPIRE_API_KEYS'))
 
-        bocha_keys_str = os.getenv('BOCHA_API_KEYS', '')
-        bocha_api_keys = [k.strip() for k in bocha_keys_str.split(',') if k.strip()]
+        bocha_api_keys = parse_csv_env_list(os.getenv('BOCHA_API_KEYS'))
 
-        minimax_keys_str = os.getenv('MINIMAX_API_KEYS', '')
-        minimax_api_keys = [k.strip() for k in minimax_keys_str.split(',') if k.strip()]
-        
-        tavily_keys_str = os.getenv('TAVILY_API_KEYS', '')
-        tavily_api_keys = [k.strip() for k in tavily_keys_str.split(',') if k.strip()]
-        
-        serpapi_keys_str = os.getenv('SERPAPI_API_KEYS', '')
-        serpapi_keys = [k.strip() for k in serpapi_keys_str.split(',') if k.strip()]
+        minimax_api_keys = parse_csv_env_list(os.getenv('MINIMAX_API_KEYS'))
 
-        brave_keys_str = os.getenv('BRAVE_API_KEYS', '')
-        brave_api_keys = [k.strip() for k in brave_keys_str.split(',') if k.strip()]
+        tavily_api_keys = resolve_alternating_api_keys(
+            'TAVILY_API_KEYS',
+            'TAVILY_ALTERNATIVE_API_KEYS',
+        )
+
+        serpapi_keys = parse_csv_env_list(os.getenv('SERPAPI_API_KEYS'))
+
+        brave_api_keys = parse_csv_env_list(os.getenv('BRAVE_API_KEYS'))
 
         _raw_urls = [u.strip() for u in os.getenv('SEARXNG_BASE_URLS', '').split(',') if u.strip()]
         searxng_base_urls = []
