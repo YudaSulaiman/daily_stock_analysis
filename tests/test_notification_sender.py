@@ -1014,5 +1014,50 @@ class TestTelegramSender(unittest.TestCase):
         self.assertEqual(mock_post.call_count, 2)
 
 
+class TestTelegramPinFirstOfDay(unittest.TestCase):
+    """First-message-of-the-day auto-pin (TELEGRAM_PIN_FIRST_MESSAGE)."""
+
+    def _make_sender(self, tmp_db_path):
+        cfg = _config(
+            telegram_bot_token="BOT",
+            telegram_chat_id="CHAT",
+            telegram_pin_first_message=True,
+            database_path=str(tmp_db_path),
+        )
+        return TelegramSender(cfg)
+
+    @mock.patch("src.notification_sender.telegram_sender.requests.post")
+    def test_pins_first_message_of_day_then_skips_subsequent(self, mock_post):
+        import tempfile
+        with tempfile.TemporaryDirectory() as tmp:
+            send_ok = _response(200, {"ok": True, "result": {"message_id": 42}})
+            pin_ok = _response(200, {"ok": True})
+            second_send_ok = _response(200, {"ok": True, "result": {"message_id": 43}})
+            mock_post.side_effect = [send_ok, pin_ok, second_send_ok]
+
+            sender = self._make_sender(tmp + "/stock.db")
+            self.assertTrue(sender.send_to_telegram("first"))
+            self.assertTrue(sender.send_to_telegram("second"))
+
+            # 3 calls: send, pin, send (no second pin).
+            self.assertEqual(mock_post.call_count, 3)
+            self.assertIn("pinChatMessage", mock_post.call_args_list[1][0][0])
+            self.assertEqual(mock_post.call_args_list[1][1]["json"]["message_id"], 42)
+            self.assertNotIn("pinChatMessage", mock_post.call_args_list[2][0][0])
+
+    @mock.patch("src.notification_sender.telegram_sender.requests.post")
+    def test_does_not_pin_when_disabled(self, mock_post):
+        mock_post.return_value = _response(200, {"ok": True, "result": {"message_id": 1}})
+        cfg = _config(
+            telegram_bot_token="BOT",
+            telegram_chat_id="CHAT",
+            telegram_pin_first_message=False,
+        )
+        sender = TelegramSender(cfg)
+        self.assertTrue(sender.send_to_telegram("hello"))
+        self.assertEqual(mock_post.call_count, 1)
+        self.assertIn("sendMessage", mock_post.call_args_list[0][0][0])
+
+
 if __name__ == "__main__":
     unittest.main()

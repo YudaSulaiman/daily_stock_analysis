@@ -6,7 +6,10 @@ Telegram 发送提醒服务
 1. 通过 Telegram Bot API 发送 文本消息
 2. 通过 Telegram Bot API 发送 图片消息
 """
+import json
 import logging
+from datetime import datetime
+from pathlib import Path
 from typing import Optional
 import requests
 import time
@@ -27,15 +30,79 @@ class TelegramSender:
         Args:
             config: 配置对象
         """
+        database_path = getattr(config, 'database_path', './data/stock_analysis.db')
+        pin_state_path = Path(database_path).parent / 'telegram_pin_state.json'
         self._telegram_config = {
             'bot_token': getattr(config, 'telegram_bot_token', None),
             'chat_id': getattr(config, 'telegram_chat_id', None),
             'message_thread_id': getattr(config, 'telegram_message_thread_id', None),
+            'pin_first_message': bool(getattr(config, 'telegram_pin_first_message', False)),
+            'pin_state_path': pin_state_path,
         }
     
     def _is_telegram_configured(self) -> bool:
         """检查 Telegram 配置是否完整"""
         return bool(self._telegram_config['bot_token'] and self._telegram_config['chat_id'])
+
+    @staticmethod
+    def _today_str() -> str:
+        return datetime.now().strftime('%Y-%m-%d')
+
+    def _should_pin_today(self) -> bool:
+        """是否需要为今天的第一条 Telegram 消息执行置顶。"""
+        if not self._telegram_config.get('pin_first_message'):
+            return False
+        state_path: Path = self._telegram_config['pin_state_path']
+        try:
+            data = json.loads(state_path.read_text(encoding='utf-8'))
+            return data.get('last_pinned_date') != self._today_str()
+        except FileNotFoundError:
+            return True
+        except (OSError, ValueError) as e:
+            logger.warning(f"读取 Telegram 置顶状态失败，按未置顶处理: {e}")
+            return True
+
+    def _mark_pinned_today(self) -> None:
+        state_path: Path = self._telegram_config['pin_state_path']
+        try:
+            state_path.parent.mkdir(parents=True, exist_ok=True)
+            state_path.write_text(
+                json.dumps({'last_pinned_date': self._today_str()}),
+                encoding='utf-8',
+            )
+        except OSError as e:
+            # 写状态失败只意味着明天可能重复置顶一次，不影响主流程
+            logger.warning(f"写入 Telegram 置顶状态失败: {e}")
+
+    def _pin_message(self, message_id: int) -> bool:
+        """调用 Telegram pinChatMessage API 置顶指定消息。"""
+        bot_token = self._telegram_config['bot_token']
+        chat_id = self._telegram_config['chat_id']
+        api_url = f"https://api.telegram.org/bot{bot_token}/pinChatMessage"
+        payload = {
+            'chat_id': chat_id,
+            'message_id': message_id,
+            'disable_notification': True,
+        }
+        try:
+            response = requests.post(api_url, json=payload, timeout=10)
+        except (requests.exceptions.ConnectionError, requests.exceptions.Timeout) as e:
+            logger.warning(f"Telegram 置顶请求失败: {e}")
+            return False
+        if response.status_code == 200 and response.json().get('ok'):
+            logger.info(f"Telegram 消息已置顶 (message_id={message_id})")
+            return True
+        logger.warning(f"Telegram 置顶失败: HTTP {response.status_code} {response.text[:200]}")
+        return False
+
+    def _try_pin_first_of_day(self, message_id: Optional[int]) -> None:
+        """若启用且今日尚未置顶，则尝试置顶并记录状态。"""
+        if message_id is None:
+            return
+        if not self._should_pin_today():
+            return
+        if self._pin_message(message_id):
+            self._mark_pinned_today()
    
     def send_to_telegram(self, content: str, *, timeout_seconds: Optional[float] = None) -> bool:
         """
@@ -125,6 +192,8 @@ class TelegramSender:
                 result = response.json()
                 if result.get('ok'):
                     logger.info("Telegram 消息发送成功")
+                    message_id = (result.get('result') or {}).get('message_id')
+                    self._try_pin_first_of_day(message_id)
                     return True
                 else:
                     error_desc = result.get('description', '未知错误')
@@ -207,6 +276,8 @@ class TelegramSender:
 
             if result.get('ok'):
                 logger.info("Telegram 消息发送成功（纯文本）")
+                message_id = (result.get('result') or {}).get('message_id')
+                self._try_pin_first_of_day(message_id)
                 return True
 
             logger.error("Telegram 纯文本回退失败: Telegram API 返回 ok=false")
@@ -278,9 +349,13 @@ class TelegramSender:
                 data['message_thread_id'] = message_thread_id
             files = {"photo": ("report.png", image_bytes, "image/png")}
             response = requests.post(api_url, data=data, files=files, timeout=30)
-            if response.status_code == 200 and response.json().get('ok'):
-                logger.info("Telegram 图片发送成功")
-                return True
+            if response.status_code == 200:
+                result = response.json()
+                if result.get('ok'):
+                    logger.info("Telegram 图片发送成功")
+                    message_id = (result.get('result') or {}).get('message_id')
+                    self._try_pin_first_of_day(message_id)
+                    return True
             logger.error("Telegram 图片发送失败: %s", response.text[:200])
             return False
         except Exception as e:
