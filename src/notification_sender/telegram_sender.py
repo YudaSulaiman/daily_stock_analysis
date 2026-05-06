@@ -8,7 +8,7 @@ Telegram 发送提醒服务
 """
 import json
 import logging
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Optional
 import requests
@@ -46,7 +46,7 @@ class TelegramSender:
 
     @staticmethod
     def _today_str() -> str:
-        return datetime.now().strftime('%Y-%m-%d')
+        return datetime.now(timezone.utc).strftime('%Y-%m-%d')
 
     def _should_pin_today(self) -> bool:
         """是否需要为今天的第一条 Telegram 消息执行置顶。"""
@@ -58,7 +58,7 @@ class TelegramSender:
             return data.get('last_pinned_date') != self._today_str()
         except FileNotFoundError:
             return True
-        except (OSError, ValueError) as e:
+        except (OSError, ValueError, AttributeError) as e:
             logger.warning(f"读取 Telegram 置顶状态失败，按未置顶处理: {e}")
             return True
 
@@ -89,20 +89,28 @@ class TelegramSender:
         except (requests.exceptions.ConnectionError, requests.exceptions.Timeout) as e:
             logger.warning(f"Telegram 置顶请求失败: {e}")
             return False
-        if response.status_code == 200 and response.json().get('ok'):
-            logger.info(f"Telegram 消息已置顶 (message_id={message_id})")
-            return True
+        if response.status_code == 200:
+            try:
+                result = response.json()
+            except ValueError:
+                logger.warning(f"Telegram 置顶失败: 响应不是有效 JSON ({response.text[:100]})")
+                return False
+            if result.get('ok'):
+                logger.info(f"Telegram 消息已置顶 (message_id={message_id})")
+                return True
         logger.warning(f"Telegram 置顶失败: HTTP {response.status_code} {response.text[:200]}")
         return False
 
     def _try_pin_first_of_day(self, message_id: Optional[int]) -> None:
-        """若启用且今日尚未置顶，则尝试置顶并记录状态。"""
+        """若启用且今日尚未置顶，则尝试置顶并记录状态。无论置顶是否成功都写入状态，避免当天重复调用 API。"""
         if message_id is None:
             return
         if not self._should_pin_today():
             return
-        if self._pin_message(message_id):
-            self._mark_pinned_today()
+        succeeded = self._pin_message(message_id)
+        self._mark_pinned_today()
+        if not succeeded:
+            logger.warning("Telegram Self Pin Failed")
    
     def send_to_telegram(self, content: str) -> bool:
         """
@@ -329,8 +337,6 @@ class TelegramSender:
                 result = response.json()
                 if result.get('ok'):
                     logger.info("Telegram 图片发送成功")
-                    message_id = (result.get('result') or {}).get('message_id')
-                    self._try_pin_first_of_day(message_id)
                     return True
             logger.error("Telegram 图片发送失败: %s", response.text[:200])
             return False
