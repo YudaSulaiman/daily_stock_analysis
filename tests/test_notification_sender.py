@@ -2061,6 +2061,82 @@ class TestTelegramPinFirstOfDay(unittest.TestCase):
         self.assertEqual(mock_post.call_count, 1)
         self.assertIn("sendMessage", mock_post.call_args_list[0][0][0])
 
+    @mock.patch("src.notification_sender.telegram_sender.requests.post")
+    def test_pin_api_non_json_response_does_not_crash_send(self, mock_post):
+        """Bug 1: non-JSON pin response must not propagate ValueError and must not crash send."""
+        import tempfile
+        with tempfile.TemporaryDirectory() as tmp:
+            send_ok = _response(200, {"ok": True, "result": {"message_id": 55}})
+            bad_pin = mock.MagicMock()
+            bad_pin.status_code = 200
+            bad_pin.text = "<html>Bad Gateway</html>"
+            bad_pin.json.side_effect = ValueError("not json")
+            mock_post.side_effect = [send_ok, bad_pin]
+
+            sender = self._make_sender(tmp + "/stock.db")
+            # send should succeed even though pin returns a non-JSON body
+            self.assertTrue(sender.send_to_telegram("hello"))
+            self.assertEqual(mock_post.call_count, 2)
+            self.assertIn("pinChatMessage", mock_post.call_args_list[1][0][0])
+
+    @mock.patch("src.notification_sender.telegram_sender.requests.post")
+    def test_corrupt_state_file_non_dict_treated_as_not_pinned(self, mock_post):
+        """Bug 2: state file with valid JSON but non-dict value must not raise AttributeError."""
+        import tempfile
+        with tempfile.TemporaryDirectory() as tmp:
+            state_path = tmp + "/telegram_pin_state.json"
+            with open(state_path, "w") as f:
+                f.write("null")  # valid JSON, not a dict
+
+            send_ok = _response(200, {"ok": True, "result": {"message_id": 7}})
+            pin_ok = _response(200, {"ok": True})
+            mock_post.side_effect = [send_ok, pin_ok]
+
+            cfg = _config(
+                telegram_bot_token="BOT",
+                telegram_chat_id="CHAT",
+                telegram_pin_first_message=True,
+                database_path=tmp + "/stock.db",
+            )
+            sender = TelegramSender(cfg)
+            # should not raise, and should attempt pin since state is unreadable
+            self.assertTrue(sender.send_to_telegram("hello"))
+            self.assertIn("pinChatMessage", mock_post.call_args_list[1][0][0])
+
+    @mock.patch("src.notification_sender.telegram_sender.requests.post")
+    def test_pin_failure_does_not_retry_on_next_message(self, mock_post):
+        """Bug 3: when pin fails, state is still written so subsequent messages don't retry."""
+        import tempfile
+        with tempfile.TemporaryDirectory() as tmp:
+            send_ok = _response(200, {"ok": True, "result": {"message_id": 10}})
+            pin_fail = _response(200, {"ok": False, "description": "not enough rights"})
+            second_send_ok = _response(200, {"ok": True, "result": {"message_id": 11}})
+            mock_post.side_effect = [send_ok, pin_fail, second_send_ok]
+
+            sender = self._make_sender(tmp + "/stock.db")
+            self.assertTrue(sender.send_to_telegram("first"))
+            self.assertTrue(sender.send_to_telegram("second"))
+
+            # 3 calls: send, (failed) pin, send — no second pin attempt
+            self.assertEqual(mock_post.call_count, 3)
+            self.assertIn("pinChatMessage", mock_post.call_args_list[1][0][0])
+            self.assertNotIn("pinChatMessage", mock_post.call_args_list[2][0][0])
+
+    @mock.patch("src.notification_sender.telegram_sender.requests.post")
+    def test_photo_send_does_not_trigger_pin(self, mock_post):
+        """Bug 4: photo sends must not consume the daily pin slot."""
+        import tempfile
+        with tempfile.TemporaryDirectory() as tmp:
+            photo_ok = _response(200, {"ok": True, "result": {"message_id": 20}})
+            mock_post.return_value = photo_ok
+
+            sender = self._make_sender(tmp + "/stock.db")
+            sender._send_telegram_photo(b"fake-image-bytes")
+
+            # only one call: sendPhoto — no pinChatMessage
+            self.assertEqual(mock_post.call_count, 1)
+            self.assertNotIn("pinChatMessage", mock_post.call_args_list[0][0][0])
+
 
 if __name__ == "__main__":
     unittest.main()
