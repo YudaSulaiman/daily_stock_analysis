@@ -2752,7 +2752,7 @@ class GeminiAnalyzer:
             context.get("market_phase_context"),
             report_language=report_language,
         )
-        prompt += """
+        prompt += f"""
 
 ## 📈 技术面数据
 
