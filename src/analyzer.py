@@ -2357,9 +2357,13 @@ class GeminiAnalyzer:
                 "{guidelines_placeholder}", market_guidelines
             )
         else:
+            if lang == "en":
+                skills_header = "## Active Trading Skills"
+            else:
+                skills_header = "## 激活的交易技能"
             skills_section = ""
             if skill_instructions:
-                skills_section = f"## 激活的交易技能\n\n{skill_instructions}\n"
+                skills_section = f"{skills_header}\n\n{skill_instructions}\n"
             default_skill_policy_section = ""
             if default_skill_policy:
                 default_skill_policy_section = f"{default_skill_policy}\n"
@@ -2370,16 +2374,22 @@ class GeminiAnalyzer:
                 .replace("{skills_section}", skills_section)
             )
         if lang == "en":
-            return base_prompt + """
+            en_prefix = """CRITICAL LANGUAGE REQUIREMENT: You MUST write ALL output in English ONLY.
+Do NOT produce any Chinese (汉字), Japanese, or Korean characters in your response.
+The structural instructions below are written in Chinese for reference — your actual output content must be entirely in English.
+
+"""
+            en_suffix = """
 
 ## Output Language (highest priority)
 
 - Keep all JSON keys unchanged.
 - `decision_type` must remain `buy|hold|sell`.
-- All human-readable JSON values must be written in English.
+- All human-readable JSON values must be written in English. No Chinese, Japanese, or Korean characters are permitted anywhere in your response.
 - Use the common English company name when you are confident; otherwise keep the original listed company name instead of inventing one.
 - This includes `stock_name`, `trend_prediction`, `operation_advice`, `confidence_level`, nested dashboard text, checklist items, and all narrative summaries.
 """
+            return en_prefix + base_prompt + en_suffix
         if lang == "ko":
             return base_prompt + """
 

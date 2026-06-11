@@ -1,9 +1,9 @@
 name: 每日股票分析
 
 on:
-  # 定时触发 - 每天北京时间 17:49 (UTC 09:49)
+  # Scheduled trigger - every weekday at 16:13 Beijing time (UTC 08:13)
   schedule:
-    - cron: '49 9 * * 1-5'     # 周一到周五，UTC 09:49 = 北京时间 17:49（错峰整点，减少 GitHub 调度队列延迟）
+    - cron: '13 8 * * 1-5'     # Monday to Friday, UTC 08:13 = Beijing time 16:13; offset from the hour to reduce GitHub queue delays
   
   # 手动触发
   workflow_dispatch:
@@ -526,14 +526,24 @@ jobs:
             echo "⚡ 已启用强制运行模式（跳过交易日检查）"
           fi
 
-          # 执行分析
+          run_english_only() {
+            set -o pipefail
+            "$@" 2>&1 | python scripts/enforce_english_artifacts.py --stream
+          }
+
+          # Run analysis
           if [ "$MODE" = "market-only" ]; then
-            python main.py --market-review $FORCE_RUN_ARG
+            run_english_only python main.py --market-review $FORCE_RUN_ARG
           elif [ "$MODE" = "stocks-only" ]; then
-            python main.py --no-market-review $FORCE_RUN_ARG
+            run_english_only python main.py --no-market-review $FORCE_RUN_ARG
           else
-            python main.py $FORCE_RUN_ARG
+            run_english_only python main.py $FORCE_RUN_ARG
           fi
+
+      - name: Force English report artifacts
+        if: always()
+        run: |
+          python scripts/enforce_english_artifacts.py reports logs
       
       - name: 上传分析报告
         uses: actions/upload-artifact@v6
