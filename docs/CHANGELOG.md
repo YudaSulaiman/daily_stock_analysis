@@ -9,6 +9,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+- [修复] LLM 流式分片不含可读正文时不再被记为“空响应”：整次生成被丢弃后再非流式重算一遍会让单次调用耗时翻倍。现在运行期首次出现即自动降级为非流式，日志给出分片数、`reasoning_content` 字符数与首个无法解析的 delta 字段名。
+- [新功能] 新增 `LLM_STREAM_ENABLED`（默认 `true`），可对分析类 LLM 调用永久关闭流式。
+- [修复] `strip_leading_think_wrapper` 不再把「仅有 `<think>` 段、其后无正文」的响应清空为空字符串，避免被上层误判为“provider 未返回内容”。
+- [修复] LLM 响应在 JSON 中途被截断时，解析原因从 `ambiguous_json` 更正为 `truncated_json`，不再把「生成不完整」误报为「JSON 来源有歧义」。
+- [改进] 非流式调用记录 `finish_reason` 与 `completion_tokens`；`finish_reason=length` 时以 WARNING 明确提示输出被 token 上限截断。
+- [改进] 每日分析工作流 job 超时默认 30 → 45 分钟，并为 `GENERATION_BACKEND_TIMEOUT_SECONDS` 提供 120s 默认值，避免单次调用在无上限（httpx `timeout=6000`）下耗尽整个 job 预算。
 - [chore] 暂停 PR Review 的自动触发，仅保留 `workflow_dispatch` 手动入口，避免辅助评审重复运行及评论权限失败产生误导性红灯；正式 CI 检查保持不变。
 - [新功能] Multi-Agent specialist 运行在分析历史保存成功后，按独立 skill 持久化版本化、低敏且幂等的有效 opinion 样本，为后续后验评估提供真实数据；本阶段不计算 outcome、不统计表现、不调整权重。
 - [新功能] AI 建议页在既有后验统计中增加决策风格历史表现，按每个分组独立的 30 个已完成样本门槛展示命中、区间涨跌、无法评估和最大不利波动，并保持旧统计接口兼容。

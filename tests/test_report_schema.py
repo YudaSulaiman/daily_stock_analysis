@@ -386,3 +386,126 @@ class TestAnalyzerSchemaFallback(unittest.TestCase):
         self.assertEqual(result.trend_prediction, "Bullish")
         self.assertEqual(result.operation_advice, "Buy")
         self.assertEqual(result.confidence_level, "Low")
+
+
+class TestTruncatedResponseDetection(unittest.TestCase):
+    """Truncated generations must be reported as truncation, not ambiguity.
+
+    Shapes are taken from the 2026-08-18 daily-analysis run, where 5 of 11 LLM
+    responses ended mid-JSON and were misreported as ``ambiguous_json``.
+    """
+
+    def _analyzer(self) -> GeminiAnalyzer:
+        analyzer = GeminiAnalyzer.__new__(GeminiAnalyzer)
+        analyzer._config_override = SimpleNamespace(generation_backend="litellm")
+        return analyzer
+
+    def test_unclosed_json_fence_reports_truncated(self) -> None:
+        """Opening ```json fence with no closing fence = truncated generation."""
+        truncated = (
+            '```json\n'
+            '{\n'
+            '  "stock_name": "NVIDIA Corporation (NVDA)",\n'
+            '  "sentiment_score": 76,\n'
+            '  "watch_conditions": [\n'
+            '    "Next open: confirm price holds above MA5'
+        )
+        with self.assertRaises(Exception) as context:
+            self._analyzer()._validate_json_response(truncated)
+        self.assertEqual(
+            getattr(context.exception, "details", {}).get("reason"), "truncated_json"
+        )
+
+    def test_unfenced_unclosed_object_reports_truncated(self) -> None:
+        """Bare JSON that opens but never closes = truncated generation."""
+        truncated = (
+            '{\n'
+            '  "stock_name": "Intel Corporation (INTC)",\n'
+            '  "analysis": "Overall score 49/100. RSI is neutral at 52'
+        )
+        with self.assertRaises(Exception) as context:
+            self._analyzer()._validate_json_response(truncated)
+        self.assertEqual(
+            getattr(context.exception, "details", {}).get("reason"), "truncated_json"
+        )
+
+    def test_complete_fenced_json_still_accepted(self) -> None:
+        """The truncation check must not reject well-formed fenced JSON."""
+        self._analyzer()._validate_json_response(
+            '```json\n'
+            '{"stock_name": "NVDA", "sentiment_score": 76, '
+            '"trend_prediction": "Bullish", "operation_advice": "Buy", '
+            '"analysis_summary": "ok"}\n'
+            '```'
+        )
+
+    def test_ambiguous_json_still_reports_ambiguous(self) -> None:
+        """Genuine ambiguity must not be relabelled as truncation."""
+        with self.assertRaises(Exception) as context:
+            self._analyzer()._validate_json_response(
+                '{"sentiment_score": 70} {"sentiment_score": 80}'
+            )
+        self.assertEqual(
+            getattr(context.exception, "details", {}).get("reason"), "ambiguous_json"
+        )
+
+
+class TestStreamAnswerExtraction(unittest.TestCase):
+    """A stream carrying only reasoning must be diagnosed, not called 'empty'."""
+
+    def _analyzer(self) -> GeminiAnalyzer:
+        analyzer = GeminiAnalyzer.__new__(GeminiAnalyzer)
+        analyzer._config_override = SimpleNamespace(generation_backend="litellm")
+        return analyzer
+
+    @staticmethod
+    def _chunk(**delta):
+        return {"choices": [{"delta": delta}]}
+
+    def test_reasoning_delta_is_not_mixed_into_answer(self) -> None:
+        """reasoning_content must never contaminate the JSON answer buffer."""
+        analyzer = self._analyzer()
+        chunk = self._chunk(reasoning_content="thinking about NVDA")
+        self.assertEqual(analyzer._extract_stream_text(chunk), "")
+        self.assertEqual(analyzer._extract_stream_reasoning(chunk), "thinking about NVDA")
+
+    def test_content_delta_still_extracted(self) -> None:
+        analyzer = self._analyzer()
+        chunk = self._chunk(content='{"a": 1}')
+        self.assertEqual(analyzer._extract_stream_text(chunk), '{"a": 1}')
+
+    def test_reasoning_only_stream_error_names_the_cause(self) -> None:
+        """The error must say chunks arrived, not 'returned empty response'."""
+        from src.analyzer import _LiteLLMStreamError
+
+        analyzer = self._analyzer()
+        stream = [self._chunk(reasoning_content="step 1"), self._chunk(reasoning_content="step 2")]
+        with self.assertRaises(_LiteLLMStreamError) as context:
+            analyzer._consume_litellm_stream(stream, model="deepseek/deepseek-v4-flash")
+        message = str(context.exception)
+        self.assertIn("2 chunk(s)", message)
+        self.assertIn("reasoning_chars=", message)
+
+    def test_streaming_latches_off_after_failure(self) -> None:
+        analyzer = self._analyzer()
+        self.assertFalse(getattr(analyzer, "_stream_degraded", False))
+        analyzer._disable_streaming_after_failure("deepseek/deepseek-v4-flash")
+        self.assertTrue(analyzer._stream_degraded)
+
+
+class TestThinkWrapperGuard(unittest.TestCase):
+    def test_reasoning_only_payload_is_not_emptied(self) -> None:
+        from src.llm.response_content import strip_leading_think_wrapper
+
+        self.assertEqual(
+            strip_leading_think_wrapper("<think>only reasoning</think>"),
+            "<think>only reasoning</think>",
+        )
+
+    def test_normal_think_wrapper_still_stripped(self) -> None:
+        from src.llm.response_content import strip_leading_think_wrapper
+
+        self.assertEqual(
+            strip_leading_think_wrapper('<think>reasoning</think>\n{"a": 1}'),
+            '{"a": 1}',
+        )

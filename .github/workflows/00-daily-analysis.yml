@@ -35,7 +35,7 @@ jobs:
     # 推荐位置仍是 Settings -> Secrets and variables -> Actions -> Repository variables。
     environment: STOCK_LIST
     # 添加超时限制，防止任务卡死
-    timeout-minutes: ${{ fromJSON(vars.ANALYSIS_TIMEOUT_MINUTES || '30') }}
+    timeout-minutes: ${{ fromJSON(vars.ANALYSIS_TIMEOUT_MINUTES || '45') }}
     
     steps:
       - name: 随机延迟（避免固定时间访问）
@@ -67,7 +67,11 @@ jobs:
           # ==========================================
           GENERATION_BACKEND: ${{ vars.GENERATION_BACKEND || secrets.GENERATION_BACKEND }}
           GENERATION_FALLBACK_BACKEND: ${{ vars.GENERATION_FALLBACK_BACKEND || secrets.GENERATION_FALLBACK_BACKEND || 'litellm' }}
-          GENERATION_BACKEND_TIMEOUT_SECONDS: ${{ vars.GENERATION_BACKEND_TIMEOUT_SECONDS || secrets.GENERATION_BACKEND_TIMEOUT_SECONDS }}
+          # 默认 120s：无上限时单次 LLM 调用可耗尽整个 job 预算（httpx 默认 timeout=6000）
+          GENERATION_BACKEND_TIMEOUT_SECONDS: ${{ vars.GENERATION_BACKEND_TIMEOUT_SECONDS || secrets.GENERATION_BACKEND_TIMEOUT_SECONDS || '120' }}
+          # 流式开关；某些 provider/model 组合会返回无法解析的流式分片，
+          # 导致整次生成被丢弃并重新非流式生成。设为 false 可直接跳过流式。
+          LLM_STREAM_ENABLED: ${{ vars.LLM_STREAM_ENABLED || secrets.LLM_STREAM_ENABLED }}
           GENERATION_BACKEND_MAX_OUTPUT_BYTES: ${{ vars.GENERATION_BACKEND_MAX_OUTPUT_BYTES || secrets.GENERATION_BACKEND_MAX_OUTPUT_BYTES }}
           GENERATION_BACKEND_MAX_CONCURRENCY: ${{ vars.GENERATION_BACKEND_MAX_CONCURRENCY || secrets.GENERATION_BACKEND_MAX_CONCURRENCY }}
           LOCAL_CLI_BACKEND_MAX_CONCURRENCY: ${{ vars.LOCAL_CLI_BACKEND_MAX_CONCURRENCY || secrets.LOCAL_CLI_BACKEND_MAX_CONCURRENCY }}

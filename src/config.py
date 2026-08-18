@@ -933,6 +933,10 @@ class Config:
     # LiteLLM unified model config (provider/model format, e.g. gemini/gemini-3.1-pro-preview)
     litellm_model: str = ""  # Primary model; must include provider prefix when set explicitly
     litellm_fallback_models: List[str] = field(default_factory=list)  # Cross-model fallback list
+    # Streaming kill switch. Some provider/model combinations stream chunks that carry no
+    # readable answer text, which costs a full generation and is then regenerated
+    # non-streamed. Set false to skip streaming entirely for analysis calls.
+    llm_stream_enabled: bool = True
 
     # Unified temperature for all LLM calls (LLM_TEMPERATURE); legacy per-provider temps are fallback only
     llm_temperature: float = 0.7
@@ -1839,6 +1843,7 @@ class Config:
             opencode_cli_model=opencode_cli_model,
             litellm_model=litellm_model,
             litellm_fallback_models=litellm_fallback_models,
+            llm_stream_enabled=os.getenv('LLM_STREAM_ENABLED', 'true').strip().lower() != 'false',
             llm_temperature=resolve_unified_llm_temperature(litellm_model),
             litellm_config_path=litellm_config_path,
             llm_models_source=llm_models_source,

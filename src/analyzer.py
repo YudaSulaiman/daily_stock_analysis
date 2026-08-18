@@ -2888,6 +2888,28 @@ The structural instructions below are written in Chinese for reference — your 
             return strip_leading_think_wrapper(content)
         return str(content).strip() if content is not None else ""
 
+    @staticmethod
+    def _stream_chunk_delta(chunk: Any) -> Any:
+        """Return the first choice's delta/message container for a stream chunk."""
+        choices = chunk.get("choices") if isinstance(chunk, dict) else getattr(chunk, "choices", None)
+        if not choices:
+            return None
+        choice = choices[0]
+        delta = choice.get("delta") if isinstance(choice, dict) else getattr(choice, "delta", None)
+        if delta is not None:
+            return delta
+        return choice.get("message") if isinstance(choice, dict) else getattr(choice, "message", None)
+
+    @staticmethod
+    def _stream_delta_keys(chunk: Any) -> List[str]:
+        """Best-effort field names on a stream delta, for diagnostics only."""
+        delta = GeminiAnalyzer._stream_chunk_delta(chunk)
+        if isinstance(delta, dict):
+            return sorted(str(k) for k in delta.keys())
+        if delta is None:
+            return []
+        return sorted(k for k in dir(delta) if not k.startswith("_"))[:12]
+
     def _extract_stream_text(self, chunk: Any) -> str:
         """Extract provider-agnostic text delta from a LiteLLM streaming chunk."""
         choices = chunk.get("choices") if isinstance(chunk, dict) else getattr(chunk, "choices", None)
@@ -2917,6 +2939,88 @@ The structural instructions below are written in Chinese for reference — your 
 
         return content if isinstance(content, str) else ""
 
+    def _extract_stream_reasoning(self, chunk: Any) -> str:
+        """Extract a reasoning-channel delta (``reasoning_content``/``reasoning``).
+
+        Reasoning text is deliberately kept OUT of the answer buffer: appending it
+        would corrupt the JSON contract. It is tracked only so an answer-less
+        stream can be reported accurately instead of as "empty response".
+        """
+        delta = self._stream_chunk_delta(chunk)
+        if delta is None:
+            return ""
+
+        for field in ("reasoning_content", "reasoning"):
+            value = delta.get(field) if isinstance(delta, dict) else getattr(delta, field, None)
+            if isinstance(value, list):
+                value = self._extract_text_blocks(value, strip=False)
+            if isinstance(value, str) and value:
+                return value
+        return ""
+
+    def _log_completion_finish_reason(
+        self,
+        response: Any,
+        *,
+        model: str,
+        max_tokens: Optional[int] = None,
+    ) -> None:
+        """Log why generation stopped, so truncated output is identifiable.
+
+        Without this, a response cut off mid-JSON is indistinguishable from a model
+        that simply emitted malformed JSON — the two need opposite fixes.
+        """
+        try:
+            choices = (
+                response.get("choices") if isinstance(response, dict)
+                else getattr(response, "choices", None)
+            )
+            if not choices:
+                return
+            choice = choices[0]
+            finish_reason = (
+                choice.get("finish_reason") if isinstance(choice, dict)
+                else getattr(choice, "finish_reason", None)
+            )
+            usage = extract_usage_payload(response) or {}
+            completion_tokens = usage.get("completion_tokens") if isinstance(usage, dict) else None
+            if finish_reason == "length":
+                logger.warning(
+                    "[LiteLLM] %s output truncated by token limit "
+                    "(finish_reason=length, completion_tokens=%s, max_tokens=%s). "
+                    "The response will fail JSON validation; raise max_tokens or shorten the schema.",
+                    model,
+                    completion_tokens,
+                    max_tokens,
+                )
+            else:
+                logger.debug(
+                    "[LiteLLM] %s finish_reason=%s completion_tokens=%s max_tokens=%s",
+                    model,
+                    finish_reason,
+                    completion_tokens,
+                    max_tokens,
+                )
+        except Exception:  # diagnostics must never break the call path
+            logger.debug("[LiteLLM] %s finish_reason unavailable", model, exc_info=True)
+
+    def _disable_streaming_after_failure(self, model: str) -> None:
+        """Latch streaming off for this process after a stream yielded no answer.
+
+        A stream that runs to completion and produces nothing costs the full
+        generation time and is then regenerated non-streamed. That is worth paying
+        once for diagnostics, never once per call.
+        """
+        if getattr(self, "_stream_degraded", False):
+            return
+        self._stream_degraded = True
+        logger.warning(
+            "[LiteLLM] disabling streaming for the rest of this run after %s produced no "
+            "answer text; subsequent calls go straight to non-stream. "
+            "Set LLM_STREAM_ENABLED=false to make this permanent.",
+            model,
+        )
+
     def _consume_litellm_stream(
         self,
         stream_response: Any,
@@ -2931,9 +3035,13 @@ The structural instructions below are written in Chinese for reference — your 
         usage: Dict[str, Any] = {}
         chars_received = 0
         next_emit_at = 1
+        chunks_seen = 0
+        reasoning_chars = 0
+        first_delta_keys: List[str] = []
 
         try:
             for chunk in stream_response:
+                chunks_seen += 1
                 chunk_usage = extract_usage_payload(chunk)
                 normalized_usage = self._normalize_usage(
                     chunk_usage,
@@ -2945,6 +3053,11 @@ The structural instructions below are written in Chinese for reference — your 
 
                 delta_text = self._extract_stream_text(chunk)
                 if not delta_text:
+                    # Track the reasoning channel so an answer-less stream can be
+                    # diagnosed precisely instead of reported as "empty response".
+                    reasoning_chars += len(self._extract_stream_reasoning(chunk))
+                    if not first_delta_keys:
+                        first_delta_keys = self._stream_delta_keys(chunk)
                     continue
 
                 chunks.append(delta_text)
@@ -2960,10 +3073,25 @@ The structural instructions below are written in Chinese for reference — your 
 
         response_text = strip_leading_think_wrapper("".join(chunks))
         if not response_text:
-            raise _LiteLLMStreamError(
-                f"{model} stream returned empty response",
-                partial_received=False,
-            )
+            # Distinguish "provider sent nothing" from "provider sent chunks we
+            # could not read". The latter used to be reported as an empty response
+            # and silently cost a full non-stream regeneration.
+            if chunks_seen:
+                logger.warning(
+                    "[LiteLLM] %s stream produced no answer text from %d chunk(s) "
+                    "(reasoning_chars=%d, first_unreadable_delta_keys=%s)",
+                    model,
+                    chunks_seen,
+                    reasoning_chars,
+                    first_delta_keys or "n/a",
+                )
+                detail = (
+                    f"{model} stream yielded {chunks_seen} chunk(s) but no answer text "
+                    f"(reasoning_chars={reasoning_chars}, delta_keys={first_delta_keys or 'n/a'})"
+                )
+            else:
+                detail = f"{model} stream returned no chunks"
+            raise _LiteLLMStreamError(detail, partial_received=False)
 
         if progress_callback and chars_received > 0:
             progress_callback(chars_received)
@@ -3143,7 +3271,13 @@ The structural instructions below are written in Chinese for reference — your 
         router_model_names = set(get_configured_llm_models(config.llm_model_list))
         for model in models_to_try:
             origins = route_deployment_origins(config.llm_model_list, model)
-            model_stream = bool(stream and not origins.has_hermes)
+            model_stream = bool(
+                stream
+                and not origins.has_hermes
+                # getattr: callers may pass a partial config object without this field.
+                and getattr(config, "llm_stream_enabled", True)
+                and not getattr(self, "_stream_degraded", False)
+            )
             recovery_model_list = config.llm_model_list
             legacy_router_model_list = getattr(self, "_legacy_router_model_list", None) or []
             if legacy_router_model_list and model == config.litellm_model and not use_channel_router:
@@ -3259,10 +3393,14 @@ The structural instructions below are written in Chinese for reference — your 
                             )
                         else:
                             logger.warning(
-                                "[LiteLLM] %s stream unavailable before first chunk, falling back to non-stream: %s",
+                                "[LiteLLM] %s stream produced no usable answer, falling back to non-stream: %s",
                                 model,
                                 safe_error,
                             )
+                            # The stream ran to completion and the whole generation was
+                            # discarded, then paid for again non-streamed. Stop streaming
+                            # for the rest of this process so the waste is paid once.
+                            self._disable_streaming_after_failure(model)
                         last_error = RuntimeError(f"{type(exc).__name__}: {safe_error}")
                     except Exception as exc:
                         safe_error = self._sanitize_litellm_exception_text(exc, config=config, model=model)
@@ -3295,6 +3433,7 @@ The structural instructions below are written in Chinese for reference — your 
                     logger=logger,
                 )
 
+                self._log_completion_finish_reason(response, model=model, max_tokens=max_tokens)
                 content = self._extract_completion_text(response)
                 if content:
                     usage_messages = None if audit_context is not None else call_kwargs["messages"]
@@ -4390,6 +4529,11 @@ The structural instructions below are written in Chinese for reference — your 
             flags=re.DOTALL,
         )
         fenced_matches = list(fence_pattern.finditer(text))
+        # An opening fence with no closing fence means generation stopped early.
+        # Report it as truncation rather than ambiguity: the payload is incomplete,
+        # not badly formatted, and the two have different remedies.
+        if not fenced_matches and stripped.startswith("```"):
+            raise ValueError("truncated_json")
         if len(fenced_matches) > 1:
             raise ValueError("ambiguous_json")
         if len(fenced_matches) == 1:
@@ -4411,6 +4555,10 @@ The structural instructions below are written in Chinese for reference — your 
         except json.JSONDecodeError as exc:
             if self._contains_embedded_json_object(text):
                 raise ValueError("ambiguous_json") from exc
+            # Unfenced payload that opens an object but never closes it: the
+            # generation stopped mid-JSON rather than emitting malformed JSON.
+            if stripped.startswith("{") and not stripped.endswith("}"):
+                raise ValueError("truncated_json") from exc
             raise
         return stripped, data
 
@@ -4651,6 +4799,8 @@ The structural instructions below are written in Chinese for reference — your 
             reason = str(exc) or "invalid_json"
             if reason == "ambiguous_json":
                 message = "JSON source is ambiguous"
+            elif reason == "truncated_json":
+                message = "LLM response ended mid-JSON (generation truncated)"
             else:
                 message = "No unique JSON object found in LLM response"
             raise self._generation_validation_error(

@@ -25,4 +25,10 @@ def strip_leading_think_wrapper(value: str) -> str:
     if close_index < 0:
         return text
 
-    return text[close_index + len(_THINK_CLOSE_TAG):].strip()
+    remainder = text[close_index + len(_THINK_CLOSE_TAG):].strip()
+    # A reasoning-only payload (nothing after </think>) must not collapse to an
+    # empty string: callers treat "" as "provider returned nothing" and pay for a
+    # full regeneration. Keep the original text so strict validation can decide.
+    if not remainder:
+        return text
+    return remainder
